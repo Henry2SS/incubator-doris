@@ -1442,6 +1442,7 @@ public abstract class RoutineLoadJob extends AbstractTxnStateChangeCallback impl
         out.writeLong(currentTotalRows);
         out.writeLong(errorRows);
         out.writeLong(totalRows);
+        out.writeLong(errorRowsAfterResumed);
         out.writeLong(unselectedRows);
         out.writeLong(receivedBytes);
         out.writeLong(totalTaskExcutionTimeMs);
@@ -1497,6 +1498,7 @@ public abstract class RoutineLoadJob extends AbstractTxnStateChangeCallback impl
         currentTotalRows = in.readLong();
         errorRows = in.readLong();
         totalRows = in.readLong();
+        errorRowsAfterResumed = in.readLong();
         unselectedRows = in.readLong();
         receivedBytes = in.readLong();
         totalTaskExcutionTimeMs = in.readLong();
