@@ -228,6 +228,7 @@ public abstract class RoutineLoadJob extends AbstractTxnStateChangeCallback impl
     protected long currentTotalRows = 0;
     protected long errorRows = 0;
     protected long totalRows = 0;
+    protected long errorRowsAfterResumed = 0;
     protected long unselectedRows = 0;
     protected long receivedBytes = 0;
     protected long totalTaskExcutionTimeMs = 1; // init as 1 to avoid division by zero
@@ -730,6 +731,7 @@ public abstract class RoutineLoadJob extends AbstractTxnStateChangeCallback impl
         // check error rate
         currentErrorRows += numOfErrorRows;
         currentTotalRows += numOfTotalRows;
+        errorRowsAfterResumed = currentErrorRows;
         if (currentTotalRows > maxBatchRows * 10) {
             if (currentErrorRows > maxErrorNum) {
                 LOG.info(new LogBuilder(LogKey.ROUTINE_LOAD_JOB, id)
