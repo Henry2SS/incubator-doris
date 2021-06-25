@@ -1498,7 +1498,9 @@ public abstract class RoutineLoadJob extends AbstractTxnStateChangeCallback impl
         currentTotalRows = in.readLong();
         errorRows = in.readLong();
         totalRows = in.readLong();
-        errorRowsAfterResumed = in.readLong();
+        if(Catalog.getCurrentCatalogJournalVersion() >= FeMetaVersion.VERSION_100){
+            errorRowsAfterResumed = in.readLong();
+	}
         unselectedRows = in.readLong();
         receivedBytes = in.readLong();
         totalTaskExcutionTimeMs = in.readLong();
