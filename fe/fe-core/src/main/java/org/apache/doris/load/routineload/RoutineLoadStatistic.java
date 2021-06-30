@@ -33,6 +33,7 @@ public class RoutineLoadStatistic implements Writable {
     /*
      * The following variables are for statistics
      * currentErrorRows/currentTotalRows: the row statistics of current sampling period
+     * errorRowsAfterResumed: currentErrorRows that is showed to users in "show routine load;".
      * errorRows/totalRows/receivedBytes: cumulative measurement
      * totalTaskExcutorTimeMs: cumulative execution time of tasks
      */
