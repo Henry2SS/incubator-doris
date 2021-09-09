@@ -287,7 +287,7 @@ public class DynamicPartitionScheduler extends MasterDaemon {
             try {
                 PartitionKey lowerBorderBound = PartitionKey.createPartitionKey(Collections.singletonList(lowBorderPartitionValue), Collections.singletonList(partitionColumn));
                 PartitionKey upperBorderBound = PartitionKey.createPartitionKey(Collections.singletonList(upBorderPartitionValue), Collections.singletonList(partitionColumn));
-                reservedHistoryPartitionKeyRange = Range.closedOpen(lowerBorderBound, upperBorderBound);
+                reservedHistoryPartitionKeyRange = Range.closed(lowerBorderBound, upperBorderBound);
                 reservedHistoryPartitionKeyRangeList.add(reservedHistoryPartitionKeyRange);
 
             } catch (AnalysisException | IllegalArgumentException e) {
@@ -306,8 +306,7 @@ public class DynamicPartitionScheduler extends MasterDaemon {
             Long checkDropPartitionId = idToItem.getKey();
             Range<PartitionKey> checkDropPartitionKey = idToItem.getValue().getItems();
             for (Range<PartitionKey> reserveHistoryPartitionKeyRange : reservedHistoryPartitionKeyRangeList) {
-                if (reserveHistoryPartitionKeyRange.contains(checkDropPartitionKey.lowerEndpoint())
-                        || (reserveHistoryPartitionKeyRange.lowerEndpoint().compareTo(checkDropPartitionKey.lowerEndpoint()) >=0 && reserveHistoryPartitionKeyRange.upperEndpoint().compareTo(checkDropPartitionKey.upperEndpoint()) <=0)) {
+                if (reserveHistoryPartitionKeyRange.contains(checkDropPartitionKey.lowerEndpoint())) {
                     isContaineds.put(checkDropPartitionId, true);
                 }
             }
