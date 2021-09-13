@@ -149,17 +149,13 @@ under the License.
     p20210523：["2021-05-23", "2021-05-24") storage_medium=SSD storage_cooldown_time=2021-05-25 00:00:00
     ```
 
-* `dynamic_partition.reserved_history_starts`
+* `dynamic_partition.reserved_history_periods`
 
-    需要保留的历史分区的开始时间。需要以 `yyyy-MM-dd,yyyy-MM-dd,...` 格式进行设置。如果不设置，默认为 `"9999-12-31"`。
-
-* `dynamic_partition.reserved_history_ends`
-
-    需要保留的历史分区的结束时间。需要以 `yyyy-MM-dd,yyyy-MM-dd,...` 格式进行设置。如果不设置，默认为 `"9999-12-31"`。
+    需要保留的历史分区的时间范围。需要以 `[yyyy-MM-dd,yyyy-MM-dd],[...,...]` 格式进行设置。如果不设置，默认为 `"[9999-12-31,9999-12-31]"`。
 
     我们举例说明。假设今天是 2021-09-06，按天分类，动态分区的属性设置为：
 
-    ```end=3, start=-3, reserved_history_starts="2020-06-01,2020-10-31", reserved_history_ends="2020-06-20,2020-11-15"```。
+    ```end=3, start=-3, reserved_history_periods="[2020-06-01,2020-06-20],[2020-10-31,2020-11-15]"```。
 
     则系统会自动保留：
 
@@ -168,7 +164,7 @@ under the License.
     ["2020-10-31","2020-11-15"]
     ```
 
-    这两个时间段的分区。其中，`reserved_history_starts` 和 `reserved_history_ends` 是一对设置项，两者需要同时被设置，且两者的长度需要一致。另外，对应位置的 `reserved_history_starts` 不能大于 `reserved_history_ends`。
+    这两个时间段的分区。其中，`reserved_history_periods` 的每一个 `[...,...]` 是一对设置项，两者需要同时被设置，且第一个时间不能大于第二个时间``。
 
 #### 创建历史分区规则
 
