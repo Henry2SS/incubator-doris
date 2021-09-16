@@ -25,7 +25,7 @@
 # contains the build version based on the git hash or svn revision.
 ##############################################################
 
-build_version="trunk"
+build_version="jd-0.15-1.0.3-release"
 
 unset LANG
 unset LC_CTYPE

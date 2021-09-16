@@ -20,6 +20,7 @@ set -e
 
 ROOT=`dirname "$0"`
 ROOT=`cd "$ROOT"; pwd`
+cd $ROOT
 
 export DORIS_HOME=${ROOT}/../..
 
