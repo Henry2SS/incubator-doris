@@ -402,8 +402,8 @@ public class Config extends ConfigBase {
     /**
      * Cluster name will be shown as the title of web page
      */
-    @ConfField public static String cluster_name = "Baidu Palo";
-
+    @ConfField public static String cluster_name = "JingDong Doris";
+  
     /**
      * node(FE or BE) will be considered belonging to the same Palo cluster if they have same cluster id.
      * Cluster id is usually a random integer generated when master FE start at first time.

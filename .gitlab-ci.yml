@@ -1,0 +1,62 @@
+image: apache/incubator-doris:build-env-1.2
+before_script:
+  - work_dir=`pwd`
+  - echo "begin to run pipeline job for doris"
+  - set -eo pipefail
+  - free -h
+  - ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+  - mkdir -p ~/.m2 && cd ~/.m2 && wget storage.jd.local/doris/doris-settings.xml && mv doris-settings.xml settings.xml
+  - cd $work_dir && pwd
+
+after_script:
+  - echo "finish pipeline job"
+
+stages:
+  - test
+  - build
+  - deploy
+
+fe_test:
+  stage: test
+  script:
+    - bash run-fe-ut.sh
+  tags:
+    - test
+  retry: 2
+
+be_test:
+  stage: test
+  script:
+    - BUILD_TYPE=RELEASE bash run-be-ut.sh --run
+  tags:
+    - test
+  retry: 2
+
+be_asan_test:
+  stage: test
+  script:
+    - BUILD_TYPE=ASAN bash run-be-ut.sh --run
+  tags:
+    - test
+  retry: 2
+
+job_build:
+  stage: build
+  script:
+    - WITH_MYSQL=1 WITH_LZO=1 bash build.sh
+    - bash ./fs_brokers/apache_hdfs_broker/build.sh
+  tags:
+    - build
+
+job_deploy:
+  stage: deploy
+  script:
+    - bash make_distribution.sh
+    - PACKAGE=`ls | grep release.tar`
+    - wget http://storage.jd.local/jss-utils/jssGo && chmod a+x jssGo
+    - echo "Release to Production, package_version is $PACKAGE"
+    - ./jssGo -a put -ak $USER -sk $PASSWORD -b doris -f $PACKAGE -k $PACKAGE
+  tags:
+    - deploy
+  when: manual
+
