@@ -1,4 +1,4 @@
-image: apache/incubator-doris:build-env-1.4.1
+image: apache/incubator-doris:build-env-1.4.2
 before_script:
   - work_dir=`pwd`
   - echo "begin to run pipeline job for doris"
