@@ -108,7 +108,9 @@ Status KafkaDataConsumerGroup::start_all(StreamLoadContext* ctx) {
 
     //improve performance
     Status (KafkaConsumerPipe::*append_data)(const char* data, size_t size);
-    if (ctx->format == TFileFormatType::FORMAT_JSON) {
+    if (ctx->format == TFileFormatType::FORMAT_AVRO) {
+        append_data = &KafkaConsumerPipe::append_avro_bytes;
+    } else if (ctx->format == TFileFormatType::FORMAT_JSON) {
         append_data = &KafkaConsumerPipe::append_json;
     } else {
         append_data = &KafkaConsumerPipe::append_with_line_delimiter;

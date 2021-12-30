@@ -413,6 +413,12 @@ SSE2NEON_MD5SUM="9de5dc2970aa7efac7faee59e2826c51"
 
 
 
+#AVRO
+AVRO_DOWNLOAD="https://downloads.apache.org/avro/stable/cpp/avro-cpp-1.11.0.tar.gz"
+AVRO_NAME=avro-cpp-1.11.0.tar.gz
+AVRO_SOURCE=avro-cpp-1.11.0
+AVRO_MD5SUM="2512f5fcfa8f681b3c63b3b32cecd8bf"
+
 # all thirdparties which need to be downloaded is set in array TP_ARCHIVES
 export TP_ARCHIVES="LIBEVENT
 OPENSSL
@@ -472,4 +478,6 @@ NLOHMANN_JSON
 OPENTELEMETRY_PROTO
 OPENTELEMETRY
 LIBBACKTRACE
-SSE2NEON"
+SSE2NEON
+AVRO"
+

@@ -108,6 +108,7 @@ set(RUNTIME_FILES
     cache/result_node.cpp
     cache/result_cache.cpp
     odbc_table_sink.cpp	
+    routine_load/kafka_consumer_pipe.cpp
 )
 
 if (WITH_MYSQL)

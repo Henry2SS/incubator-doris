@@ -6,6 +6,8 @@ before_script:
   - free -h
   - ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
   - mkdir -p ~/.m2 && cd ~/.m2 && wget storage.jd.local/doris/doris-settings.xml && mv doris-settings.xml settings.xml
+  - export TP_INSTALL_DIR=/var/local/thirdparty/installed/
+  - wget storage.jd.local/doris/jd-avro-1.11.0.tar.gz && tar -xzvf jd-avro-1.11.0.tar.gz && cd jd-avro-1.11.0 && mkdir -p $TP_INSTALL_DIR/include/avro && cp -rf  lib/* $TP_INSTALL_DIR/lib && cp -rf avro/* $TP_INSTALL_DIR/include/avro
   - cd $work_dir && pwd
 
 after_script:

@@ -24,7 +24,6 @@ import org.apache.doris.common.Pair;
 import org.apache.doris.common.UserException;
 import org.apache.doris.common.util.DebugUtil;
 import org.apache.doris.thrift.TExecPlanFragmentParams;
-import org.apache.doris.thrift.TFileFormatType;
 import org.apache.doris.thrift.TKafkaLoadInfo;
 import org.apache.doris.thrift.TLoadSourceType;
 import org.apache.doris.thrift.TPlanFragment;
@@ -98,11 +97,7 @@ public class KafkaTaskInfo extends RoutineLoadTaskInfo {
         tRoutineLoadTask.setMaxIntervalS(routineLoadJob.getMaxBatchIntervalS());
         tRoutineLoadTask.setMaxBatchRows(routineLoadJob.getMaxBatchRows());
         tRoutineLoadTask.setMaxBatchSize(routineLoadJob.getMaxBatchSizeBytes());
-        if (!routineLoadJob.getFormat().isEmpty() && routineLoadJob.getFormat().equalsIgnoreCase("json")) {
-            tRoutineLoadTask.setFormat(TFileFormatType.FORMAT_JSON);
-        } else {
-            tRoutineLoadTask.setFormat(TFileFormatType.FORMAT_CSV_PLAIN);
-        }
+        tRoutineLoadTask.setFormat(routineLoadJob.getFormatType());
         return tRoutineLoadTask;
     }
 
