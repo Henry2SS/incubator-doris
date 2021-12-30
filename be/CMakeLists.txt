@@ -272,6 +272,9 @@ set_target_properties(cctz PROPERTIES IMPORTED_LOCATION ${THIRDPARTY_DIR}/lib/li
 add_library(aws-sdk-core STATIC IMPORTED)
 set_target_properties(aws-sdk-core PROPERTIES IMPORTED_LOCATION ${THIRDPARTY_DIR}/lib64/libaws-cpp-sdk-core.a)
 
+add_library(avro STATIC IMPORTED)
+set_target_properties(avro PROPERTIES IMPORTED_LOCATION ${THIRDPARTY_DIR}/lib/libavrocpp_s.a)
+
 add_library(aws-sdk-s3 STATIC IMPORTED)
 set_target_properties(aws-sdk-s3 PROPERTIES IMPORTED_LOCATION ${THIRDPARTY_DIR}/lib64/libaws-cpp-sdk-s3.a)
 
@@ -521,6 +524,7 @@ set(COMMON_THIRDPARTY
     minizip
     breakpad
     ${AWS_LIBS}
+    avro
 )
 
 if (${MAKE_TEST} STREQUAL "ON")
