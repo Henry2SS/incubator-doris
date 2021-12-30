@@ -16,19 +16,11 @@
 // under the License.
 
 #pragma once
-
-#include <stdint.h>
-
-#include <map>
-#include <string>
-#include <vector>
-
-#include "exec/file_reader.h"
-#include "librdkafka/rdkafka.h"
-#include "runtime/message_body_sink.h"
 #include "runtime/stream_load/stream_load_pipe.h"
 
 namespace doris {
+
+class JdwData;
 
 class KafkaConsumerPipe : public StreamLoadPipe {
 public:
@@ -49,6 +41,11 @@ public:
     }
 
     Status append_json(const char* data, size_t size) { return append_and_flush(data, size); }
-};
 
+    Status append_avro_bytes(const char* data, size_t size);
+
+private:
+
+    Status append_map(const doris::JdwData& jdw_data);
+};
 } // end namespace doris

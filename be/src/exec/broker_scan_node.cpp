@@ -231,6 +231,7 @@ std::unique_ptr<BaseScanner> BrokerScanNode::create_scanner(const TBrokerScanRan
                               _pre_filter_texprs, counter);
         break;
     case TFileFormatType::FORMAT_JSON:
+    case TFileFormatType::FORMAT_AVRO:
         scan = new JsonScanner(_runtime_state, runtime_profile(), scan_range.params,
                                scan_range.ranges, scan_range.broker_addresses,
                                _pre_filter_texprs, counter);
