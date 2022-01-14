@@ -485,8 +485,6 @@ endif()
 # add it here first.
 set(COMMON_THIRDPARTY
     rocksdb
-    librdkafka_cpp
-    librdkafka
     libs2
     snappy
     Boost::date_time
@@ -525,6 +523,8 @@ set(COMMON_THIRDPARTY
     breakpad
     ${AWS_LIBS}
     avro
+    librdkafka_cpp
+    librdkafka
 )
 
 if (${MAKE_TEST} STREQUAL "ON")
