@@ -26,7 +26,7 @@ import com.google.gson.Gson;
 import org.apache.doris.analysis.CreateFunctionStmt;
 
 import org.apache.doris.analysis.FunctionName;
-import org.apache.doris.analysis.HdfsURI;
+import org.apache.doris.common.util.URI;
 import org.apache.doris.thrift.TAggregateFunction;
 import org.apache.doris.thrift.TFunction;
 import org.apache.doris.thrift.TFunctionBinaryType;
@@ -95,7 +95,7 @@ public class AggregateFunction extends Function {
 
     public AggregateFunction(FunctionName fnName, List<Type> argTypes,
                              Type retType, Type intermediateType,
-                             HdfsURI location, String updateFnSymbol, String initFnSymbol,
+                             URI location, String updateFnSymbol, String initFnSymbol,
                              String serializeFnSymbol, String mergeFnSymbol, String getValueFnSymbol,
                              String removeFnSymbol, String finalizeFnSymbol) {
         this(fnName, argTypes, retType, intermediateType, location, updateFnSymbol, initFnSymbol, serializeFnSymbol,
@@ -104,7 +104,7 @@ public class AggregateFunction extends Function {
 
     public AggregateFunction(FunctionName fnName, List<Type> argTypes,
                              Type retType, Type intermediateType,
-                             HdfsURI location, String updateFnSymbol, String initFnSymbol,
+                             URI location, String updateFnSymbol, String initFnSymbol,
                              String serializeFnSymbol, String mergeFnSymbol, String getValueFnSymbol,
                              String removeFnSymbol, String finalizeFnSymbol, boolean vectorized) {
         this(fnName, argTypes, retType, intermediateType, false, location, updateFnSymbol, initFnSymbol, serializeFnSymbol,
@@ -113,7 +113,7 @@ public class AggregateFunction extends Function {
 
     public AggregateFunction(FunctionName fnName, List<Type> argTypes,
                              Type retType, Type intermediateType, boolean hasVarArgs,
-                             HdfsURI location, String updateFnSymbol, String initFnSymbol,
+                             URI location, String updateFnSymbol, String initFnSymbol,
                              String serializeFnSymbol, String mergeFnSymbol, String getValueFnSymbol,
                              String removeFnSymbol, String finalizeFnSymbol) {
         this(fnName, argTypes, retType, intermediateType, hasVarArgs, location, updateFnSymbol, initFnSymbol, serializeFnSymbol,
@@ -122,7 +122,7 @@ public class AggregateFunction extends Function {
 
     public AggregateFunction(FunctionName fnName, List<Type> argTypes,
                              Type retType, Type intermediateType, boolean hasVarArgs,
-                             HdfsURI location, String updateFnSymbol, String initFnSymbol,
+                             URI location, String updateFnSymbol, String initFnSymbol,
                              String serializeFnSymbol, String mergeFnSymbol, String getValueFnSymbol,
                              String removeFnSymbol, String finalizeFnSymbol, boolean vectorized) {
         // only `count` is always not nullable, other aggregate function is always nullable
@@ -248,12 +248,12 @@ public class AggregateFunction extends Function {
 
     // Used to create UDAF
     public AggregateFunction(FunctionName fnName, Type[] argTypes,
-                             Type retType, boolean hasVarArgs, Type intermediateType, String location,
+                             Type retType, boolean hasVarArgs, Type intermediateType, URI location,
                              String initFnSymbol, String updateFnSymbol, String mergeFnSymbol,
                              String serializeFnSymbol, String finalizeFnSymbol,
                              String getValueFnSymbol, String removeFnSymbol) {
         super(fnName, Arrays.asList(argTypes), retType, hasVarArgs);
-        this.setLocation(new HdfsURI(location));
+        this.setLocation(location);
         this.intermediateType = (intermediateType.equals(retType)) ? null : intermediateType;
         this.updateFnSymbol = updateFnSymbol;
         this.initFnSymbol = initFnSymbol;
@@ -275,7 +275,7 @@ public class AggregateFunction extends Function {
         Type retType;
         boolean hasVarArgs;
         Type intermediateType;
-        String objectFile;
+        URI location;
         String initFnSymbol;
         String updateFnSymbol;
         String serializeFnSymbol;
@@ -317,8 +317,8 @@ public class AggregateFunction extends Function {
             return this;
         }
 
-        public AggregateFunctionBuilder objectFile(String objectFile) {
-            this.objectFile = objectFile;
+        public AggregateFunctionBuilder location(URI location) {
+            this.location = location;
             return this;
         }
 
@@ -359,7 +359,7 @@ public class AggregateFunction extends Function {
 
         public AggregateFunction build() {
             AggregateFunction fn = new AggregateFunction(name, argTypes, retType, hasVarArgs, intermediateType,
-                    objectFile, initFnSymbol, updateFnSymbol, mergeFnSymbol,
+                    location, initFnSymbol, updateFnSymbol, mergeFnSymbol,
                     serializeFnSymbol, finalizeFnSymbol,
                     getValueFnSymbol, removeFnSymbol);
             fn.setBinaryType(binaryType);
