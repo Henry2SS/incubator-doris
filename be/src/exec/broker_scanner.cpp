@@ -20,6 +20,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "exec/avro_scanner.h"
 #include "exec/broker_reader.h"
 #include "exec/buffered_reader.h"
 #include "exec/decompressor.h"
@@ -216,6 +217,7 @@ Status BrokerScanner::create_decompressor(TFileFormatType::type type) {
     switch (type) {
     case TFileFormatType::FORMAT_CSV_PLAIN:
     case TFileFormatType::FORMAT_JSON:
+    case TFileFormatType::FORMAT_AVRO:
     case TFileFormatType::FORMAT_PROTO:
         compress_type = CompressType::UNCOMPRESSED;
         break;

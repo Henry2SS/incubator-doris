@@ -98,6 +98,10 @@ static TFileFormatType::type parse_format(const std::string& format_str,
         if (compress_type.empty()) {
             format_type = TFileFormatType::FORMAT_JSON;
         }
+    } else if (boost::iequals(format_str, "AVRO")) {
+        if (compress_type.empty()) {
+            format_type = TFileFormatType::FORMAT_AVRO;
+        }
     }
     return format_type;
 }
@@ -112,6 +116,7 @@ static bool is_format_support_streaming(TFileFormatType::type format) {
     case TFileFormatType::FORMAT_CSV_LZO:
     case TFileFormatType::FORMAT_CSV_LZOP:
     case TFileFormatType::FORMAT_JSON:
+    case TFileFormatType::FORMAT_AVRO:
         return true;
     default:
         return false;

@@ -21,6 +21,7 @@
 #include <sstream>
 
 #include "common/object_pool.h"
+#include "exec/avro_scanner.h"
 #include "exec/broker_scanner.h"
 #include "exec/json_scanner.h"
 #include "exec/orc_scanner.h"
@@ -144,7 +145,8 @@ Status BrokerScanNode::get_next(RuntimeState* state, RowBatch* row_batch, bool* 
             _batch_queue.pop_front();
         }
     }
-
+    
+    WHZ_LOG << "(scanner_batch == nullptr) " << (scanner_batch == nullptr) << std::endl;
     // All scanner has been finished, and all cached batch has been read
     if (scanner_batch == nullptr) {
         _scan_finished.store(true);
@@ -156,7 +158,9 @@ Status BrokerScanNode::get_next(RuntimeState* state, RowBatch* row_batch, bool* 
     _queue_writer_cond.notify_one();
 
     // get scanner's batch memory
+    WHZ_LOG << "row_batch->num_rows() = " << row_batch->num_rows() << std::endl;
     row_batch->acquire_state(scanner_batch.get());
+    WHZ_LOG << "row_batch->num_rows2() = " << row_batch->num_rows() << std::endl;
     _num_rows_returned += row_batch->num_rows();
     COUNTER_SET(_rows_returned_counter, _num_rows_returned);
 
@@ -230,15 +234,19 @@ std::unique_ptr<BaseScanner> BrokerScanNode::create_scanner(const TBrokerScanRan
                               _pre_filter_texprs, counter);
         break;
     case TFileFormatType::FORMAT_JSON:
-    case TFileFormatType::FORMAT_AVRO:
         scan = new JsonScanner(_runtime_state, runtime_profile(), scan_range.params,
+                               scan_range.ranges, scan_range.broker_addresses,
+                               _pre_filter_texprs, counter);
+        break;
+    case TFileFormatType::FORMAT_AVRO:
+        scan = new AvroScanner(_runtime_state, runtime_profile(), scan_range.params,
                                scan_range.ranges, scan_range.broker_addresses,
                                _pre_filter_texprs, counter);
         break;
     default:
         scan = new BrokerScanner(_runtime_state, runtime_profile(), scan_range.params,
-                                 scan_range.ranges, scan_range.broker_addresses,
-                                 _pre_filter_texprs, counter);
+                               scan_range.ranges, scan_range.broker_addresses,
+                               _pre_filter_texprs, counter);
     }
     std::unique_ptr<BaseScanner> scanner(scan);
     return scanner;

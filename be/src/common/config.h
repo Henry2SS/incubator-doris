@@ -659,6 +659,8 @@ CONF_Int32(max_minidump_file_number, "10");
 // and the valid values are: 0.9.0, 0.8.2, 0.8.1, 0.8.0.
 CONF_String(kafka_broker_version_fallback, "0.10.0");
 
+// Avro schema file path, set default to "${DORIS_HOME}/conf/avro_schema.json"
+CONF_String(avro_schema_file_path, "${DORIS_HOME}/conf/avro_schema.json");
 } // namespace config
 
 } // namespace doris
