@@ -34,10 +34,10 @@ Status KafkaConsumerPipe::append_avro_bytes(const char* data, size_t size) {
     try {
         d->init(*json_in);
         avro::decode(*d, jdw_data);
+        return append_map(jdw_data);
     } catch (avro::Exception& e) {
         return Status::InternalError(std::string("avro message deserialize error : ") + e.what());
     }
-    return append_map(jdw_data);
 }
 
 Status KafkaConsumerPipe::append_map(const doris::JdwData& jdw_data) {
