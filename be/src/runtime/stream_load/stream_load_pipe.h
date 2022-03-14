@@ -101,7 +101,11 @@ public:
         }
 
         if (_total_length == -1) {
-            return _read_next_buffer(data, length);
+            LOG(WARNING) << "whz_log this is read_one_message"; 
+            Status st = _read_next_buffer(data, length);
+            LOG(WARNING) << "whz_log " << (const char*) data->get();
+            LOG(WARNING) << "whz_log _read_next_buffer st = " << st.to_string();
+            return st;
         }
 
         // _total_length > 0, read the entire data

@@ -300,6 +300,16 @@ public abstract class RoutineLoadJob extends AbstractTxnStateChangeCallback impl
             jobProperties.put(PROPS_FUZZY_PARSE, "false");
         } else if (stmt.getFormat().equals("avro")) {
             jobProperties.put(PROPS_FORMAT, "avro");
+            if (!Strings.isNullOrEmpty(stmt.getJsonPaths())) {
+                jobProperties.put(PROPS_JSONPATHS, stmt.getJsonPaths());
+            } else {
+                jobProperties.put(PROPS_JSONPATHS, "");
+            }
+            if (!Strings.isNullOrEmpty(stmt.getJsonRoot())) {
+                jobProperties.put(PROPS_JSONROOT, stmt.getJsonRoot());
+            } else {
+                jobProperties.put(PROPS_JSONROOT, "");
+            }
         } else if (stmt.getFormat().equals("json")) {
             jobProperties.put(PROPS_FORMAT, "json");
             if (!Strings.isNullOrEmpty(stmt.getJsonPaths())) {
@@ -557,6 +567,11 @@ public abstract class RoutineLoadJob extends AbstractTxnStateChangeCallback impl
     @Override
     public boolean isReadJsonByLine() {
         return false;
+    }
+
+    @Override
+    public boolean isReadAvroByLine() {
+        return true;
     }
 
     @Override

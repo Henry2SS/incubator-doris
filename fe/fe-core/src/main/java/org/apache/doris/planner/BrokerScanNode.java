@@ -409,6 +409,8 @@ public class BrokerScanNode extends LoadScanNode {
                 return TFileFormatType.FORMAT_ORC;
             } else if (fileFormat.toLowerCase().equals("json")) {
                 return TFileFormatType.FORMAT_JSON;
+            } else if (fileFormat.toLowerCase().equals("avro")) {
+                return TFileFormatType.FORMAT_AVRO;
             } else if (fileFormat.toLowerCase().equals("csv")) {
                 return TFileFormatType.FORMAT_CSV_PLAIN;
             }
@@ -474,6 +476,15 @@ public class BrokerScanNode extends LoadScanNode {
                     brokerScanRange(curLocations).addToRanges(rangeDesc);
                     curFileOffset += rangeBytes;
 
+                } if (formatType == TFileFormatType.FORMAT_AVRO) {
+                    TBrokerRangeDesc rangeDesc = createBrokerRangeDesc(curFileOffset, fileStatus, formatType,
+                            leftBytes, columnsFromPath, numberOfColumnsFromFile, brokerDesc);
+                    rangeDesc.setJsonpaths(context.fileGroup.getJsonPaths());
+                    rangeDesc.setJsonRoot(context.fileGroup.getJsonRoot());
+                    rangeDesc.setReadAvroByLine(context.fileGroup.isReadAvroByLine());
+                    brokerScanRange(curLocations).addToRanges(rangeDesc);
+                    curFileOffset = 0;
+                    i++;
                 } else {
                     TBrokerRangeDesc rangeDesc = createBrokerRangeDesc(curFileOffset, fileStatus, formatType,
                             leftBytes, columnsFromPath, numberOfColumnsFromFile, brokerDesc);
@@ -501,6 +512,11 @@ public class BrokerScanNode extends LoadScanNode {
                     rangeDesc.setFuzzyParse(context.fileGroup.isFuzzyParse());
                     rangeDesc.setNumAsString(context.fileGroup.isNumAsString());
                     rangeDesc.setReadJsonByLine(context.fileGroup.isReadJsonByLine());
+                }
+                if (formatType == TFileFormatType.FORMAT_AVRO) {
+                    rangeDesc.setJsonpaths(context.fileGroup.getJsonPaths());
+                    rangeDesc.setJsonRoot(context.fileGroup.getJsonRoot());
+                    rangeDesc.setReadAvroByLine(context.fileGroup.isReadAvroByLine());
                 }
                 if (this instanceof HiveScanNode) {
                     rangeDesc.setHdfsParams(tHdfsParams);

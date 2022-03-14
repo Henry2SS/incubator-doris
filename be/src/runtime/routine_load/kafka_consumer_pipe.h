@@ -44,6 +44,10 @@ public:
 
     Status append_avro_bytes(const char* data, size_t size);
 
+    Status append_avro(const char* data, size_t size) {
+        return append_and_flush(data, size);
+    }
+
 private:
 
     Status append_map(const doris::JdwData& jdw_data);

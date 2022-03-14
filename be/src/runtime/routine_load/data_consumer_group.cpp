@@ -109,7 +109,7 @@ Status KafkaDataConsumerGroup::start_all(StreamLoadContext* ctx) {
     //improve performance
     Status (KafkaConsumerPipe::*append_data)(const char* data, size_t size);
     if (ctx->format == TFileFormatType::FORMAT_AVRO) {
-        append_data = &KafkaConsumerPipe::append_avro_bytes;
+        append_data = &KafkaConsumerPipe::append_avro;
     } else if (ctx->format == TFileFormatType::FORMAT_JSON) {
         append_data = &KafkaConsumerPipe::append_json;
     } else {
@@ -159,6 +159,8 @@ Status KafkaDataConsumerGroup::start_all(StreamLoadContext* ctx) {
                         << ", partition: " << msg->partition() << ", offset: " << msg->offset()
                         << ", len: " << msg->len();
 
+            LOG(WARNING) << "whz_log_log msg->payload" << static_cast<const char*>(msg->payload());
+            LOG(WARNING) << "whz_log_log msg->len" << static_cast<size_t>(msg->len());
             Status st = (kafka_pipe.get()->*append_data)(static_cast<const char*>(msg->payload()),
                                              static_cast<size_t>(msg->len()));
             if (st.ok()) {

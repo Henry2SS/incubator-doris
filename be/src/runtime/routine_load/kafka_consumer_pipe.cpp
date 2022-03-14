@@ -28,6 +28,7 @@
 namespace doris {
 // now avro json schema is hard code
 Status KafkaConsumerPipe::append_avro_bytes(const char* data, size_t size) {
+    LOG(WARNING) << "whz_log data in append_avro_bytes is " << data;
     std::unique_ptr<avro::InputStream> json_in = avro::memoryInputStream(reinterpret_cast<const uint8_t*>(data), size);
     avro::DecoderPtr d = avro::binaryDecoder();
     doris::JdwData jdw_data;

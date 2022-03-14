@@ -57,6 +57,7 @@ public class StreamLoadTask implements LoadTaskInfo {
     private String jsonRoot;
     private boolean fuzzyParse;
     private boolean readJsonByLine;
+    private boolean readAvroByLine;
 
     // optional
     private ImportColumnDescs columnExprDescs = new ImportColumnDescs();
@@ -86,6 +87,7 @@ public class StreamLoadTask implements LoadTaskInfo {
         this.numAsString = false;
         this.fuzzyParse = false;
         this.readJsonByLine = false;
+        this.readAvroByLine = false;
     }
 
     public TUniqueId getId() {
@@ -166,6 +168,8 @@ public class StreamLoadTask implements LoadTaskInfo {
     public boolean isReadJsonByLine() {
         return readJsonByLine;
     }
+
+    public boolean isReadAvroByLine() { return readAvroByLine;}
 
     @Override
     public boolean isFuzzyParse() {
@@ -277,6 +281,15 @@ public class StreamLoadTask implements LoadTaskInfo {
             numAsString = request.isNumAsString();
             fuzzyParse = request.isFuzzyParse();
             readJsonByLine = request.isReadJsonByLine();
+        }
+        if (request.getFormatType() == TFileFormatType.FORMAT_AVRO) {
+            if (request.getJsonpaths() != null) {
+                jsonPaths = request.getJsonpaths();
+            }
+            if (request.getJsonRoot() != null) {
+                jsonRoot = request.getJsonRoot();
+            }
+            readAvroByLine = request.isReadAvroByLine();
         }
         if (request.isSetMergeType()) {
             try {
