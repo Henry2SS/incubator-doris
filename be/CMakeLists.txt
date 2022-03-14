@@ -135,9 +135,9 @@ set(BOOST_ROOT ${THIRDPARTY_DIR})
 set(Boost_NO_BOOST_CMAKE OFF)
 
 if (NOT APPLE)
-    find_package(Boost 1.73.0 REQUIRED COMPONENTS system date_time)
+    find_package(Boost 1.73.0 REQUIRED COMPONENTS system date_time iostreams)
 else()
-    find_package(Boost 1.73.0 COMPONENTS system date_time)
+    find_package(Boost 1.73.0 COMPONENTS system date_time iostreams)
 endif()
 
 set(GPERFTOOLS_HOME "${THIRDPARTY_DIR}/gperftools")
@@ -488,6 +488,7 @@ set(COMMON_THIRDPARTY
     libs2
     snappy
     Boost::date_time
+    Boost::iostreams
     thrift
     thriftnb
     glog

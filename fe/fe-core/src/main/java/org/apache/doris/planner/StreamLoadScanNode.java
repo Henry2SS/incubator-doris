@@ -105,6 +105,15 @@ public class StreamLoadScanNode extends LoadScanNode {
             rangeDesc.setFuzzyParse(taskInfo.isFuzzyParse());
             rangeDesc.setReadJsonByLine(taskInfo.isReadJsonByLine());
         }
+        if (rangeDesc.format_type == TFileFormatType.FORMAT_AVRO) {
+            if (!taskInfo.getJsonPaths().isEmpty()) {
+                rangeDesc.setJsonpaths(taskInfo.getJsonPaths());
+            }
+            if (!taskInfo.getJsonRoot().isEmpty()) {
+                rangeDesc.setJsonRoot(taskInfo.getJsonRoot());
+            }
+            rangeDesc.setReadAvroByLine(taskInfo.isReadAvroByLine());
+        }
         rangeDesc.splittable = false;
         switch (taskInfo.getFileType()) {
             case FILE_LOCAL:

@@ -108,6 +108,7 @@ set(EXEC_FILES
     s3_reader.cpp
     s3_writer.cpp
     hdfs_reader_writer.cpp
+    avro_scanner.cpp
 )
 
 if (ARCH_AMD64)

@@ -108,7 +108,7 @@ enum TFileFormatType {
     FORMAT_ORC,
     FORMAT_JSON,
     FORMAT_PROTO,
-    FORMAT_AVRO
+    FORMAT_AVRO,
 }
 
 struct THdfsConf {
@@ -155,6 +155,8 @@ struct TBrokerRangeDesc {
     17: optional bool read_json_by_line;
     // Whether read line by column defination, only for Hive
     18: optional bool read_by_column_def;
+    // required when load by avro when format_type == FORMAT_AVRO
+    19: optional bool read_avro_by_line; 
 }
 
 struct TBrokerScanRangeParams {

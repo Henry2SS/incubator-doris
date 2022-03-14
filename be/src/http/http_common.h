@@ -43,6 +43,7 @@ static const std::string HTTP_STRIP_OUTER_ARRAY = "strip_outer_array";
 static const std::string HTTP_NUM_AS_STRING = "num_as_string";
 static const std::string HTTP_FUZZY_PARSE = "fuzzy_parse";
 static const std::string HTTP_READ_JSON_BY_LINE = "read_json_by_line";
+static const std::string HTTP_READ_AVRO_BY_LINE = "read_avro_by_line";
 
 static const std::string HTTP_MERGE_TYPE = "merge_type";
 static const std::string HTTP_DELETE_CONDITION = "delete";

@@ -103,6 +103,7 @@ public class BrokerFileGroup implements Writable {
     private String jsonRoot = "";
     private boolean fuzzyParse = true;
     private boolean readJsonByLine = false;
+    private boolean readAvroByLine = false;
     private boolean numAsString = false;
 
     // for unit test and edit log persistence
@@ -249,6 +250,12 @@ public class BrokerFileGroup implements Writable {
             readJsonByLine = true;
             numAsString = dataDescription.isNumAsString();
         }
+        if (fileFormat != null && fileFormat.equalsIgnoreCase("avro")) {
+            jsonPaths = dataDescription.getJsonPaths();
+            jsonRoot = dataDescription.getJsonRoot();
+            // For broker load, we only support reading avro format data line by line, so we set readAvroByLine to true here.
+            readAvroByLine = true;
+        }
     }
 
     public long getTableId() {
@@ -363,8 +370,16 @@ public class BrokerFileGroup implements Writable {
         return readJsonByLine;
     }
 
+    public boolean isReadAvroByLine() {
+        return readAvroByLine;
+    }
+
     public void setReadJsonByLine(boolean readJsonByLine) {
         this.readJsonByLine = readJsonByLine;
+    }
+
+    public void setReadAvroByLine(boolean readAvroByLine) {
+        this.readAvroByLine = readAvroByLine;
     }
 
     public boolean isNumAsString() {
