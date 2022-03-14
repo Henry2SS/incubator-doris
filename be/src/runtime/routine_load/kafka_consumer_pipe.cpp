@@ -47,14 +47,18 @@ Status KafkaConsumerPipe::append_map(const doris::JdwData& jdw_data) {
     rapidjson::Value key(rapidjson::kStringType);
     rapidjson::Value value(rapidjson::kStringType);
 
-    const auto& src_map = jdw_data.src.get_map();
-    const auto& cur_map = jdw_data.cur.get_map();
     std::unordered_map<std::string, std::string> result_map;
-    for (const auto& it : src_map) {
-        result_map[it.first.c_str()] = (it.second.is_null() ? "" : it.second.get_string());
+    if (!jdw_data.src.is_null()) {
+        const auto& src_map = jdw_data.src.get_map();
+        for (const auto& it : src_map) {
+            result_map[it.first.c_str()] = (it.second.is_null() ? "" : it.second.get_string());
+        }
     }
-    for (const auto& it : cur_map) {
-        result_map[it.first.c_str()] = (it.second.is_null() ? "" : it.second.get_string());
+    if (!jdw_data.cur.is_null()) {
+        const auto& cur_map = jdw_data.cur.get_map();
+        for (const auto& it : cur_map) {
+            result_map[it.first.c_str()] = (it.second.is_null() ? "" : it.second.get_string());
+        }
     }
     for (const auto& it : result_map) {
         key.SetString(it.first.c_str(), allocator);
