@@ -76,7 +76,7 @@ private:
 #define SRC_TUPLE_SLOT_ID_START 7
 
 int AvroScannerTest::create_src_tuple(TDescriptorTable& t_desc_table, int next_slot_id) {
-    const char *columnNames[] = {"mid", "db", "opt", "sch", "tab", "ts"};
+    const char *columnNames[] = {"k1", "k2", "k3", "k4", "k5", "k6"};
     for (int i = 0; i < COLUMN_NUMBERS; i++) {
         TSlotDescriptor slot_desc;
 
@@ -138,7 +138,7 @@ int AvroScannerTest::create_dst_tuple(TDescriptorTable& t_desc_table, int next_s
         slot_desc.byteOffset = byteOffset;
         slot_desc.nullIndicatorByte = 0;
         slot_desc.nullIndicatorBit = 0;
-        slot_desc.colName = "mid";
+        slot_desc.colName = "k1";
         slot_desc.slotIdx = 1;
         slot_desc.isMaterialized = true;
 
@@ -155,7 +155,7 @@ int AvroScannerTest::create_dst_tuple(TDescriptorTable& t_desc_table, int next_s
             TTypeNode node;
             node.__set_type(TTypeNodeType::SCALAR);
             TScalarType scalar_type;
-            scalar_type.__set_type(TPrimitiveType::VARCHAR);
+            scalar_type.__set_type(TPrimitiveType::BIGINT);
             scalar_type.__set_len(65535);
             node.__set_scalar_type(scalar_type);
             type.types.push_back(node);
@@ -165,7 +165,7 @@ int AvroScannerTest::create_dst_tuple(TDescriptorTable& t_desc_table, int next_s
         slot_desc.byteOffset = byteOffset;
         slot_desc.nullIndicatorByte = 0;
         slot_desc.nullIndicatorBit = 1;
-        slot_desc.colName = "db";
+        slot_desc.colName = "k2";
         slot_desc.slotIdx = 2;
         slot_desc.isMaterialized = true;
 
@@ -182,7 +182,7 @@ int AvroScannerTest::create_dst_tuple(TDescriptorTable& t_desc_table, int next_s
             TTypeNode node;
             node.__set_type(TTypeNodeType::SCALAR);
             TScalarType scalar_type;
-            scalar_type.__set_type(TPrimitiveType::VARCHAR);
+            scalar_type.__set_type(TPrimitiveType::SMALLINT);
             scalar_type.__set_len(65535);
             node.__set_scalar_type(scalar_type);
             type.types.push_back(node);
@@ -192,7 +192,7 @@ int AvroScannerTest::create_dst_tuple(TDescriptorTable& t_desc_table, int next_s
         slot_desc.byteOffset = byteOffset;
         slot_desc.nullIndicatorByte = 0;
         slot_desc.nullIndicatorBit = 2;
-        slot_desc.colName = "opt";
+        slot_desc.colName = "k3";
         slot_desc.slotIdx = 3;
         slot_desc.isMaterialized = true;
 
@@ -219,7 +219,7 @@ int AvroScannerTest::create_dst_tuple(TDescriptorTable& t_desc_table, int next_s
         slot_desc.byteOffset = byteOffset;
         slot_desc.nullIndicatorByte = 0;
         slot_desc.nullIndicatorBit = 3;
-        slot_desc.colName = "sch";
+        slot_desc.colName = "k4";
         slot_desc.slotIdx = 4;
         slot_desc.isMaterialized = true;
 
@@ -246,7 +246,7 @@ int AvroScannerTest::create_dst_tuple(TDescriptorTable& t_desc_table, int next_s
         slot_desc.byteOffset = byteOffset;
         slot_desc.nullIndicatorByte = 0;
         slot_desc.nullIndicatorBit = 4;
-        slot_desc.colName = "tab";
+        slot_desc.colName = "k5";
         slot_desc.slotIdx = 5;
         slot_desc.isMaterialized = true;
 
@@ -277,7 +277,7 @@ int AvroScannerTest::create_dst_tuple(TDescriptorTable& t_desc_table, int next_s
         slot_desc.byteOffset = byteOffset;
         slot_desc.nullIndicatorByte = 0;
         slot_desc.nullIndicatorBit = 5;
-        slot_desc.colName = "ts";
+        slot_desc.colName = "k6";
         slot_desc.slotIdx = 6;
         slot_desc.isMaterialized = true;
 
@@ -555,7 +555,7 @@ TEST_F(AvroScannerTest, read_avro_file) {
         range.path = "/tmp/jdolap/be/test/exec/test_data/avro_scanner/test_file_reader.avsc";
         //range.avropaths = "[\"$.mid\", \"$.src.k1\", \"$.src.k2\", \"$.src.k3\"]";
         //range.avropaths = "[\"$.src.k1\", \"$.src.k2\", \"$.src.k3\", \"$.cur.k4\", \"$.cur.k5\", \"$.cur.k6\"]";
-        range.avropaths = "[\"$.mid\", \"$.db\", \"$.opt\", \"$.sch\", \"$.tab\", \"$.ts\"]";
+        range.avropaths = "[\"$.src\", \"$.cur\"]";
         range.file_type = TFileType::FILE_LOCAL;
         broker_scan_range.ranges.push_back(range);
 
@@ -566,7 +566,7 @@ TEST_F(AvroScannerTest, read_avro_file) {
         range1.splittable = true;
         range1.__isset.avropaths = true;
         range1.path = "/tmp/jdolap/be/test/exec/test_data/avro_scanner/test2.avsc";
-        range1.avropaths = "[\"$.mid\", \"$.db\", \"$.opt\", \"$.sch\", \"$.tab\", \"$.ts\"]";
+        range1.avropaths = "[\"$.src\", \"$.cur\"]";
         range1.file_type = TFileType::FILE_LOCAL;
         broker_scan_range.ranges.push_back(range1);
 
@@ -591,16 +591,9 @@ TEST_F(AvroScannerTest, read_avro_file) {
         scan_node.runtime_profile()->pretty_print(&ss);
         LOG(INFO) << ss.str();
     }
-    //AvroReader::AvroReader(RuntimeState* state, ScannerCounter* counter, RuntimeProfile* profile,
-    //                   FileReader* file_reader, LineReader* line_reader) 
-    //BrokerScanner scanner(&_runtime_state, _profile, _params, ranges, _addresses, _pre_filter, &_counter);
-    //AvroReader reader(&_runtime_state, &_counter, scan_node.runtime_profile(), nullptr, nullptr);
-    //std::cout << reader.get_filename() << std::endl;
-    //WHZ_TEST << "whz_test" << std::endl;
-    //reader.init("[\"$.mid\", \"$.src.k1\", \"$.src.k2\", \"$.src.k3\"]", "");
-}
-}
 
+}
+}
 
 int main(int argc, char** argv) {
     ::testing::InitGoogleTest(&argc, argv);
