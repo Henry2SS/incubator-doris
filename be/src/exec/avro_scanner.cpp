@@ -241,7 +241,8 @@ Status AvroScanner::open_avro_reader() {
         avropath = range.avropaths;
     }
     if (range.__isset.json_root) {
-        avro_root = range.json_root;
+        //avro_root = range.json_root;
+        return Status::InvalidArgument("json_root is not support currently, while using AVRO.");
     }
 
     if (_read_avro_by_line) {
@@ -313,6 +314,14 @@ Status AvroReader::init(const std::string& avropath, const std::string& avro_roo
     if (!avro_root.empty()) {
         JsonFunctions::parse_json_paths(avro_root, &_parsed_avro_root);
     }
+
+    for(auto vect_row : _parsed_avropaths) {
+        _print_avro_path(vect_row);
+    }
+    // process avro_path
+    Status path_valid;
+    path_valid = _validate_and_generate_avro_path(&_parsed_avropaths);
+    RETURN_IF_ERROR(path_valid);
     // get avro schema
     // test
     // bool exist = FileUtils::check_exist(config::avro_schema_file_path);
@@ -326,9 +335,41 @@ Status AvroReader::init(const std::string& avropath, const std::string& avro_roo
     }
     
     // TODO: check if path is in shcema
-
+    path_valid = _validate_path_and_schema(&_schema, &_parsed_avropaths);
+    RETURN_IF_ERROR(path_valid);
     return Status::OK();
 }
+
+Status AvroReader::_validate_path_and_schema(avro::ValidSchema* schema, std::vector<std::vector<JsonPath>>* vect) {
+    std::vector<std::string> fields_vect;
+    for (int i = 0; i < (*schema).root()->leaves(); i++) {
+        fields_vect.push_back((*schema).root()->nameAt(i));
+        WHZ_LOG << "field " << i << " : " << (*schema).root()->nameAt(i) << std::endl;
+    }
+    for (auto vect_row : *vect) {
+        if (std::find(fields_vect.begin(), fields_vect.end(), vect_row[1].to_string()) == fields_vect.end()) {
+            WHZ_LOG << "can't find path `" << vect_row[1].to_string() <<  "` in schema." << std::endl;
+            return Status::InvalidArgument("avro path `" + vect_row[1].to_string() + "` can't be found in schema.");
+        }
+    }
+    return Status::OK();
+}
+
+Status AvroReader::_validate_and_generate_avro_path(std::vector<std::vector<JsonPath>>* vect) {
+    for (auto vect_row : *vect) {
+        if (!vect_row[0].is_valid) {
+            return Status::InvalidArgument("avro path only support 2-level format. It should be like [\"$.key_1\", \"$.key_2\"]");
+        }
+        if (vect_row.size() != 2) {
+            return Status::InvalidArgument("avro path only support 2-level format. It should be like [\"$.key_1\", \"$.key_2\"]");
+        } 
+        if (vect_row[1].to_string() == "*") {
+            return Status::InvalidArgument("avro path only support 2-level format. It should be like [\"$.key_1\", \"$.key_2\"]");
+        } 
+    }
+    return Status::OK();
+}
+
 
 Status AvroReader::_get_avro_paths(const std::string& avropath,
                            std::vector<std::vector<JsonPath>>* vect) {

@@ -34,11 +34,10 @@
 #include "exec/avro_scanner.h"
 
 namespace doris {
-//class AvroFileStream;
 
-class AvroScannerTest : public testing::Test {
+class AvroScannerTestMap : public testing::Test {
 public:
-    AvroScannerTest() : _runtime_state(TQueryGlobals()) {
+    AvroScannerTestMap() : _runtime_state(TQueryGlobals()) {
         init();
         _runtime_state._instance_mem_tracker.reset(new MemTracker());
         _runtime_state._exec_env = ExecEnv::GetInstance();
@@ -75,7 +74,7 @@ private:
 #define DST_TUPLE_SLOT_ID_START 1
 #define SRC_TUPLE_SLOT_ID_START 7
 
-int AvroScannerTest::create_src_tuple(TDescriptorTable& t_desc_table, int next_slot_id) {
+int AvroScannerTestMap::create_src_tuple(TDescriptorTable& t_desc_table, int next_slot_id) {
     const char *columnNames[] = {"k1", "k2", "k3", "mid", "db", "sch"};
     for (int i = 0; i < COLUMN_NUMBERS; i++) {
         TSlotDescriptor slot_desc;
@@ -117,7 +116,7 @@ int AvroScannerTest::create_src_tuple(TDescriptorTable& t_desc_table, int next_s
     return next_slot_id;
 }
 
-int AvroScannerTest::create_dst_tuple(TDescriptorTable& t_desc_table, int next_slot_id) {
+int AvroScannerTestMap::create_dst_tuple(TDescriptorTable& t_desc_table, int next_slot_id) {
     int32_t byteOffset = 8;
     { //k4
         TSlotDescriptor slot_desc;
@@ -298,7 +297,7 @@ int AvroScannerTest::create_dst_tuple(TDescriptorTable& t_desc_table, int next_s
     return next_slot_id;
 }
 
-void AvroScannerTest::init_desc_table() {
+void AvroScannerTestMap::init_desc_table() {
     TDescriptorTable t_desc_table;
 
     // table descriptors
@@ -322,7 +321,7 @@ void AvroScannerTest::init_desc_table() {
     _runtime_state.set_desc_tbl(_desc_tbl);
 }
 
-void AvroScannerTest::create_expr_info() {
+void AvroScannerTestMap::create_expr_info() {
     TTypeDesc varchar_type;
     {
         TTypeNode node;
@@ -517,7 +516,7 @@ void AvroScannerTest::create_expr_info() {
     _params.__set_src_tuple_id(TUPLE_ID_SRC);
 }
 
-void AvroScannerTest::init() {
+void AvroScannerTestMap::init() {
     create_expr_info();
     init_desc_table();
 
@@ -533,7 +532,7 @@ void AvroScannerTest::init() {
 }
 
 // test avro scanner read file
-TEST_F(AvroScannerTest, read_avro_file) {
+TEST_F(AvroScannerTestMap, read_avro_file_map) {
     BrokerScanNode scan_node(&_obj_pool, _tnode, *_desc_tbl);
     scan_node.init(_tnode);
     auto status = scan_node.prepare(&_runtime_state);

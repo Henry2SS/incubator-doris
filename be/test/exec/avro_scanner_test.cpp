@@ -556,7 +556,7 @@ TEST_F(AvroScannerTest, read_avro_file) {
         range.read_json_by_line = true;
         range.path = "/tmp/jdolap/be/test/exec/test_data/avro_scanner/test2.avsc";
         //range.avropaths = "[\"$.mid\", \"$.src.k1\", \"$.src.k2\", \"$.src.k3\"]";
-        //range.avropaths = "[\"$.src.k1\", \"$.src.k2\", \"$.src.k3\", \"$.cur.k4\", \"$.cur.k5\", \"$.cur.k6\"]";
+        //range.avropaths = "[\"$.*\"]";
         range.avropaths = "[\"$.mid\", \"$.db\", \"$.opt\", \"$.sch\", \"$.tab\", \"$.ts\"]";
         range.file_type = TFileType::FILE_LOCAL;
         broker_scan_range.ranges.push_back(range);

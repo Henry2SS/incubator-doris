@@ -158,6 +158,9 @@ private:
     std::string _print_avro_value(avro::NodePtr root_node);
     std::string _print_avro_path(const std::vector<JsonPath>& path);
 
+    Status _validate_and_generate_avro_path(std::vector<std::vector<JsonPath>>* vect);
+    Status _validate_path_and_schema(avro::ValidSchema* schema, std::vector<std::vector<JsonPath>>* vect);
+
 private:
     int _next_line;
     int _total_lines;
@@ -179,7 +182,7 @@ private:
     const char* _filename;
     avro::ValidSchema _schema;
     std::unique_ptr<avro::InputStream> _avro_input_stream;
-    avro::DecoderPtr _decoder;
+    //avro::DecoderPtr _decoder;
     std::unique_ptr<avro::DataFileReader<avro::GenericDatum>> _file_reader_ptr;
     avro::GenericDatum _datum;
 
