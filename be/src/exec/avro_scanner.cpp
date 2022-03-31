@@ -24,6 +24,7 @@
 #include "exec/broker_reader.h"
 #include "exec/buffered_reader.h"
 #include "exec/local_file_reader.h"
+#include "exec/plain_binary_line_reader.h"
 #include "exec/s3_reader.h"
 #include "exprs/expr.h"
 #include "exprs/json_functions.h"
@@ -44,10 +45,12 @@ AvroScanner::AvroScanner(RuntimeState* state, RuntimeProfile* profile,
       _ranges(ranges),
       _broker_addresses(broker_addresses),
       _cur_file_reader(nullptr),
+      _cur_line_reader(nullptr),
       _cur_avro_reader(nullptr),
       _next_range(0),
       _cur_reader_eof(false),
-      _scanner_eof(false) {
+      _scanner_eof(false),
+      _read_avro_by_line(false) {
     if (params.__isset.line_delimiter_length && params.line_delimiter_length > 1) {
         _line_delimiter = params.line_delimiter_str;
         _line_delimiter_length = params.line_delimiter_length;
@@ -81,24 +84,22 @@ Status AvroScanner::get_next(Tuple* tuple, MemPool* tuple_pool, bool* eof) {
             }
         }
 
-        // if (_read_avro_by_line && _skip_next_line) {
-        //     size_t size = 0;
-        //     const uint8_t* object_ptr = nullptr;
-        //     RETURN_IF_ERROR(_cur_line_reader->read_line(&object_ptr, &size, &_cur_reader_eof));
-        //     _skip_next_line = false;
-        //     continue;
-        // }
+        if (_read_avro_by_line && _skip_next_line) {
+            size_t size = 0;
+            const uint8_t* object_ptr = nullptr;
+            RETURN_IF_ERROR(_cur_line_reader->read_line(&object_ptr, &size, &_cur_reader_eof));
+            _skip_next_line = false;
+            continue;
+        }
 
-        //bool is_empty_row = false;
-        int32_t readed_rows = 0;
-        // 
+        bool is_empty_row = false;
+
         RETURN_IF_ERROR(_cur_avro_reader->read_avro_row(_src_tuple, _src_slot_descs, tuple_pool,
-                                                    readed_rows, &_cur_reader_eof));
-        WHZ_LOG << "read_avro_row = " << readed_rows << " rows." << std::endl;
-
-        // 
-
-        COUNTER_UPDATE(_rows_read_counter, readed_rows);
+                                                        &is_empty_row, &_cur_reader_eof));
+        if (is_empty_row) {
+            continue;
+        }
+        COUNTER_UPDATE(_rows_read_counter, 1);
         SCOPED_TIMER(_materialize_timer);
         if (fill_dest_tuple(tuple, tuple_pool)) {
             break; // break if true
@@ -119,10 +120,10 @@ void AvroScanner::close() {
         delete _cur_avro_reader;
         _cur_avro_reader = nullptr;
     }
-    // if (_cur_line_reader != nullptr) {
-    //     delete _cur_line_reader;
-    //     _cur_line_reader = nullptr;
-    // }
+    if (_cur_line_reader != nullptr) {
+        delete _cur_line_reader;
+        _cur_line_reader = nullptr;
+    }
     if (_cur_file_reader != nullptr) {
         if (_stream_load_pipe != nullptr) {
             _stream_load_pipe.reset();
@@ -146,9 +147,14 @@ Status AvroScanner::open_file_reader() {
 
     const TBrokerRangeDesc& range = _ranges[_next_range];
     int64_t start_offset = range.start_offset;
-    // if (range.__isset.read_json_by_line) {
-    //     _read_avro_by_line = range.read_json_by_line;
-    // }
+    if (range.__isset.read_json_by_line) {
+        _read_avro_by_line = range.read_json_by_line;
+    }
+    // current only support line reader
+    if (!_read_avro_by_line) {
+        return Status::InvalidArgument("Only support read avro by line. Set `read_json_by_line` = \"true\".");
+    }
+
     switch (range.file_type) {
     
     case TFileType::FILE_LOCAL: {
@@ -193,26 +199,26 @@ Status AvroScanner::open_file_reader() {
 }
 
 
-// Status AvroScanner::open_line_reader() {
-//     if (_cur_line_reader != nullptr) {
-//         delete _cur_line_reader;
-//         _cur_line_reader = nullptr;
-//     }
+Status AvroScanner::open_line_reader() {
+    if (_cur_line_reader != nullptr) {
+        delete _cur_line_reader;
+        _cur_line_reader = nullptr;
+    }
 
-//     const TBrokerRangeDesc& range = _ranges[_next_range];
-//     int64_t size = range.size;
-//     if (range.start_offset != 0) {
-//         size += 1;
-//         _skip_next_line = true;
-//     } else {
-//         _skip_next_line = false;
-//     }
-//     _cur_line_reader = new PlainTextLineReader(_profile, _cur_file_reader, nullptr,
-//                                                size, _line_delimiter, _line_delimiter_length);
-//     //_cur_line_reader = new PlainBinaryLineReader(_cur_file_reader);
-//     _cur_reader_eof = false;
-//     return Status::OK();
-// }
+    const TBrokerRangeDesc& range = _ranges[_next_range];
+    int64_t size = range.size;
+    if (range.start_offset != 0) {
+        size += 1;
+        _skip_next_line = true;
+    } else {
+        _skip_next_line = false;
+    }
+    // _cur_line_reader = new PlainBiaLineReader(_profile, _cur_file_reader, nullptr,
+    //                                           size, _line_delimiter, _line_delimiter_length);
+    _cur_line_reader = new PlainBinaryLineReader(_cur_file_reader);
+    _cur_reader_eof = false;
+    return Status::OK();
+}
 
 
 Status AvroScanner::open_avro_reader() {
@@ -238,12 +244,13 @@ Status AvroScanner::open_avro_reader() {
         avro_root = range.json_root;
     }
 
-    // if (_read_avro_by_line) {
-    //     _cur_avro_reader =
-    //             new AvroReader(_state, _counter, _profile, nullptr, _cur_line_reader);
-    // } else {
-    _cur_avro_reader = new AvroReader(_state, _counter, _profile, _cur_file_reader);
-    //}
+    if (_read_avro_by_line) {
+        _cur_avro_reader =
+                new AvroReader(_state, _counter, _profile, nullptr, _cur_line_reader);
+    } else {
+        // current case never reached
+        _cur_avro_reader = new AvroReader(_state, _counter, _profile, _cur_file_reader, nullptr);
+    }
     WHZ_LOG << "new AvroReader" << std::endl;
     RETURN_IF_ERROR(_cur_avro_reader->init(avropath, avro_root));
     return Status::OK();
@@ -256,10 +263,9 @@ Status AvroScanner::open_next_reader() {
     }
 
     RETURN_IF_ERROR(open_file_reader());
-    // if (_read_avro_by_line) {
-    //     RETURN_IF_ERROR(open_line_reader());
-    // }
-    //RETURN_IF_ERROR(open_line_reader());
+    if (_read_avro_by_line) {
+        RETURN_IF_ERROR(open_line_reader());
+    }
     RETURN_IF_ERROR(open_avro_reader());
     _next_range++;
 
@@ -271,13 +277,14 @@ Status AvroScanner::open_next_reader() {
 
 ////// class AvroReader
 AvroReader::AvroReader(RuntimeState* state, ScannerCounter* counter, RuntimeProfile* profile,
-                       FileReader* file_reader) 
+                       FileReader* file_reader, LineReader* line_reader) 
         : _next_line(0), 
           _total_lines(0),
           _state(state),
           _counter(counter),
           _profile(profile),
           _file_reader(file_reader),
+          _line_reader(line_reader),
           _closed(false),
           _file_reader_ptr(nullptr) {
     _bytes_read_counter = ADD_COUNTER(_profile, "BytesRead", TUnit::BYTES);
@@ -370,31 +377,36 @@ std::string AvroReader::_print_avro_path(const std::vector<JsonPath>& path) {
 }
 
 // read one avro object from line reader or file reader, and decode it
-Status AvroReader::_parse_avro_doc(int32_t readed_rows, size_t* size, bool* eof, MemPool* tuple_pool,
+Status AvroReader::_parse_avro_doc(size_t* size, bool* eof, MemPool* tuple_pool,
                                    Tuple* tuple, const std::vector<SlotDescriptor*>& slot_descs) {
     SCOPED_TIMER(_file_read_timer);
     const uint8_t* avro_str = nullptr;
     std::unique_ptr<uint8_t[]> avro_str_ptr;
-    int64_t length = 0;
-    RETURN_IF_ERROR(_file_reader->read_one_message(&avro_str_ptr, &length));
-    avro_str = avro_str_ptr.get();
-    *size = length;
-    if (length == 0) {
-        *eof = true;
-    }
 
+    if (_line_reader != nullptr) {
+        RETURN_IF_ERROR(_line_reader->read_line(&avro_str, size, eof));
+    } else {
+        int64_t length = 0;
+        RETURN_IF_ERROR(_file_reader->read_one_message(&avro_str_ptr, &length));
+        avro_str = avro_str_ptr.get();
+        *size = length;
+        if (length == 0) {
+            *eof = true;
+        }
+    }
+    
+    _bytes_read_counter += *size;
     if (*eof) {
         return Status::OK();
     }
-
-    _bytes_read_counter += *size;
-    
+    WHZ_LOG << "length = " << *size << std::endl;
     _file_reader_ptr = std::make_unique<avro::DataFileReader<avro::GenericDatum>>(avro::memoryInputStream(avro_str, *size));
 
+    // just allow one row in one object
     if (_file_reader_ptr.get()->read(_datum)) {
         // TODO : skip row here ?
 
-        while (_datum.type() != avro::AVRO_RECORD) {
+        if (_datum.type() != avro::AVRO_RECORD) {
             return Status::DataQualityError("Root schema must be a record");
         }
         // if (_datum.value<avro::GenericRecord>().fieldCount() < _parsed_avropaths.size()) {
@@ -412,10 +424,10 @@ Status AvroReader::_parse_avro_doc(int32_t readed_rows, size_t* size, bool* eof,
         // } 
         if (!_write_values_by_avropath(_datum, tuple_pool, tuple, slot_descs)) {
             _counter->num_rows_filtered++;
-        } else {
-            readed_rows++;
+            return Status::DataQualityError("Data quality is not good.");
         }
     }
+    //*eof = true;
     //WHZ_LOG << "file not base" << _reader << std::endl;
     return Status::OK();
 }
@@ -471,7 +483,7 @@ bool AvroReader::_write_values_by_avropath(avro::GenericDatum datum, MemPool* tu
         case avro::AVRO_STRING:
         case avro::AVRO_BOOL:
             {
-                _process_simple_type(type, path_name, record_datum, nullcount, tuple_pool, tuple, slot_descs);
+                valid = _process_simple_type(type, path_name, record_datum, nullcount, tuple_pool, tuple, slot_descs);
             }
             break;
         case avro::AVRO_MAP:
@@ -483,12 +495,20 @@ bool AvroReader::_write_values_by_avropath(avro::GenericDatum datum, MemPool* tu
                     avro::GenericDatum map_datum = pair.second;
                     for (size_t j = 0; j < slot_descs.size(); j++) {
                         if (map_key == slot_descs[j]->col_name()) {
-                            _process_simple_type(map_type, map_key, map_datum, nullcount, tuple_pool, tuple, slot_descs);
+                            valid = _process_simple_type(map_type, map_key, map_datum, nullcount, tuple_pool, tuple, slot_descs);
                         }
                     }
                 }
             }
+            break;
+        case avro::AVRO_ARRAY:
+            {
+                WHZ_LOG << "Not supported " << type << " yet. Coming soon.";
+                valid = false;
+            }
+            break;
         default:
+            WHZ_LOG << "Not supported " << type << " yet. Coming soon.";
             valid = false;
             break;
         }
@@ -609,21 +629,27 @@ bool AvroReader::_process_simple_type(avro::Type type, std::string& path_name, a
     return valid;
 }
 
+// one avro object only one row
 Status AvroReader::_handle_nested_complex_avro(Tuple* tuple,
                                  const std::vector<SlotDescriptor*>& slot_descs,
-                                 MemPool* tuple_pool, int32_t readed_rows, bool* eof) {
+                                 MemPool* tuple_pool, bool* is_empty_row, bool* eof) {
     WHZ_LOG << "into _handle_nested_complex_avro"  << std::endl;
     size_t size = 0;
-    //int32_t readed_rows = 0;
-    Status st = _parse_avro_doc(readed_rows, &size, eof, tuple_pool, tuple, slot_descs);
+    
+    Status st = _parse_avro_doc(&size, eof, tuple_pool, tuple, slot_descs);
     WHZ_LOG << "after parse_avro_doc, the st is :" << st.to_string() << std::endl;
-
+    if (st.is_data_quality_error()) {
+        return Status::DataQualityError("avro data quality bad.");
+    }
     // if (st.is_data_quality_error()) {
     //             //continue;
     //     Status::DataQualityError("data quality is not good");
     // }
     RETURN_IF_ERROR(st);
-    
+    if (size == 0 || *eof) {
+        *is_empty_row = true;
+        return Status::OK();
+    }
     // if (size == 0 || *eof) {
     //     *is_empty_row = true;
     // }
@@ -640,8 +666,8 @@ Status AvroReader::_handle_nested_complex_avro(Tuple* tuple,
 
 
 Status AvroReader::read_avro_row(Tuple* tuple, const std::vector<SlotDescriptor*>& slot_descs, MemPool* tuple_pool,
-                int32_t readed_rows, bool* eof) {
-    return AvroReader::_handle_nested_complex_avro(tuple, slot_descs, tuple_pool, readed_rows, eof);
+                                 bool* is_empty_row, bool* eof) {
+    return AvroReader::_handle_nested_complex_avro(tuple, slot_descs, tuple_pool, is_empty_row, eof);
 }
 
 

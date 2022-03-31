@@ -76,7 +76,7 @@ private:
 #define SRC_TUPLE_SLOT_ID_START 7
 
 int AvroScannerTest::create_src_tuple(TDescriptorTable& t_desc_table, int next_slot_id) {
-    const char *columnNames[] = {"k1", "k2", "k3", "k4", "k5", "k6"};
+    const char *columnNames[] = {"k1", "k2", "k3", "mid", "db", "sch"};
     for (int i = 0; i < COLUMN_NUMBERS; i++) {
         TSlotDescriptor slot_desc;
 
@@ -209,7 +209,7 @@ int AvroScannerTest::create_dst_tuple(TDescriptorTable& t_desc_table, int next_s
             TTypeNode node;
             node.__set_type(TTypeNodeType::SCALAR);
             TScalarType scalar_type;
-            scalar_type.__set_type(TPrimitiveType::VARCHAR);
+            scalar_type.__set_type(TPrimitiveType::LARGEINT);
             scalar_type.__set_len(65535);
             node.__set_scalar_type(scalar_type);
             type.types.push_back(node);
@@ -219,7 +219,7 @@ int AvroScannerTest::create_dst_tuple(TDescriptorTable& t_desc_table, int next_s
         slot_desc.byteOffset = byteOffset;
         slot_desc.nullIndicatorByte = 0;
         slot_desc.nullIndicatorBit = 3;
-        slot_desc.colName = "k4";
+        slot_desc.colName = "mid";
         slot_desc.slotIdx = 4;
         slot_desc.isMaterialized = true;
 
@@ -246,7 +246,7 @@ int AvroScannerTest::create_dst_tuple(TDescriptorTable& t_desc_table, int next_s
         slot_desc.byteOffset = byteOffset;
         slot_desc.nullIndicatorByte = 0;
         slot_desc.nullIndicatorBit = 4;
-        slot_desc.colName = "k5";
+        slot_desc.colName = "db";
         slot_desc.slotIdx = 5;
         slot_desc.isMaterialized = true;
 
@@ -267,7 +267,7 @@ int AvroScannerTest::create_dst_tuple(TDescriptorTable& t_desc_table, int next_s
             scalar_type.__isset.scale = true;
             scalar_type.__set_precision(-1);
             scalar_type.__set_scale(-1);
-            scalar_type.__set_type(TPrimitiveType::LARGEINT);
+            scalar_type.__set_type(TPrimitiveType::VARCHAR);
             scalar_type.__set_len(65535);
             node.__set_scalar_type(scalar_type);
             type.types.push_back(node);
@@ -277,7 +277,7 @@ int AvroScannerTest::create_dst_tuple(TDescriptorTable& t_desc_table, int next_s
         slot_desc.byteOffset = byteOffset;
         slot_desc.nullIndicatorByte = 0;
         slot_desc.nullIndicatorBit = 5;
-        slot_desc.colName = "k6";
+        slot_desc.colName = "sch";
         slot_desc.slotIdx = 6;
         slot_desc.isMaterialized = true;
 
@@ -552,23 +552,25 @@ TEST_F(AvroScannerTest, read_avro_file) {
         range.format_type = TFileFormatType::FORMAT_AVRO;
         range.splittable = true;
         range.__isset.avropaths = true;
-        range.path = "/tmp/jdolap/be/test/exec/test_data/avro_scanner/test_file_reader.avsc";
+        range.__isset.read_json_by_line = true;
+        range.read_json_by_line = true;
+        range.path = "/tmp/jdolap/be/test/exec/test_data/avro_scanner/test2.avsc";
         //range.avropaths = "[\"$.mid\", \"$.src.k1\", \"$.src.k2\", \"$.src.k3\"]";
         //range.avropaths = "[\"$.src.k1\", \"$.src.k2\", \"$.src.k3\", \"$.cur.k4\", \"$.cur.k5\", \"$.cur.k6\"]";
-        range.avropaths = "[\"$.src\", \"$.cur\"]";
+        range.avropaths = "[\"$.src\", \"$.mid\", \"$.db\", \"$.sch\"]";
         range.file_type = TFileType::FILE_LOCAL;
         broker_scan_range.ranges.push_back(range);
 
-        TBrokerRangeDesc range1;
-        range1.start_offset = 0;
-        range1.size = -1;
-        range1.format_type = TFileFormatType::FORMAT_AVRO;
-        range1.splittable = true;
-        range1.__isset.avropaths = true;
-        range1.path = "/tmp/jdolap/be/test/exec/test_data/avro_scanner/test2.avsc";
-        range1.avropaths = "[\"$.src\", \"$.cur\"]";
-        range1.file_type = TFileType::FILE_LOCAL;
-        broker_scan_range.ranges.push_back(range1);
+        // TBrokerRangeDesc range1;
+        // range1.start_offset = 0;
+        // range1.size = -1;
+        // range1.format_type = TFileFormatType::FORMAT_AVRO;
+        // range1.splittable = true;
+        // range1.__isset.avropaths = true;
+        // range1.path = "/tmp/jdolap/be/test/exec/test_data/avro_scanner/test2.avsc";
+        // range1.avropaths = "[\"$.src\", \"$.mid\", \"$.db\", \"$.sch\"]";
+        // range1.file_type = TFileType::FILE_LOCAL;
+        // broker_scan_range.ranges.push_back(range1);
 
         scan_range_params.scan_range.__set_broker_scan_range(broker_scan_range);
         scan_ranges.push_back(scan_range_params);
@@ -582,7 +584,7 @@ TEST_F(AvroScannerTest, read_avro_file) {
     bool eof = false;
     status = scan_node.get_next(&_runtime_state, &batch, &eof);
     ASSERT_TRUE(status.ok());
-    ASSERT_EQ(4, batch.num_rows());
+    ASSERT_EQ(1, batch.num_rows());
     ASSERT_FALSE(eof);
     batch.reset();
     scan_node.close(&_runtime_state);

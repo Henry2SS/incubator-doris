@@ -552,7 +552,9 @@ TEST_F(AvroScannerTest, read_avro_file) {
         range.format_type = TFileFormatType::FORMAT_AVRO;
         range.splittable = true;
         range.__isset.avropaths = true;
-        range.path = "/tmp/jdolap/be/test/exec/test_data/avro_scanner/test_file_reader.avsc";
+        range.__isset.read_json_by_line = true;
+        range.read_json_by_line = true;
+        range.path = "/tmp/jdolap/be/test/exec/test_data/avro_scanner/test2.avsc";
         //range.avropaths = "[\"$.mid\", \"$.src.k1\", \"$.src.k2\", \"$.src.k3\"]";
         //range.avropaths = "[\"$.src.k1\", \"$.src.k2\", \"$.src.k3\", \"$.cur.k4\", \"$.cur.k5\", \"$.cur.k6\"]";
         range.avropaths = "[\"$.mid\", \"$.db\", \"$.opt\", \"$.sch\", \"$.tab\", \"$.ts\"]";
@@ -565,6 +567,8 @@ TEST_F(AvroScannerTest, read_avro_file) {
         range1.format_type = TFileFormatType::FORMAT_AVRO;
         range1.splittable = true;
         range1.__isset.avropaths = true;
+        range1.__isset.read_json_by_line = true;
+        range1.read_json_by_line = true;
         range1.path = "/tmp/jdolap/be/test/exec/test_data/avro_scanner/test2.avsc";
         range1.avropaths = "[\"$.mid\", \"$.db\", \"$.opt\", \"$.sch\", \"$.tab\", \"$.ts\"]";
         range1.file_type = TFileType::FILE_LOCAL;
@@ -582,7 +586,7 @@ TEST_F(AvroScannerTest, read_avro_file) {
     bool eof = false;
     status = scan_node.get_next(&_runtime_state, &batch, &eof);
     ASSERT_TRUE(status.ok());
-    ASSERT_EQ(4, batch.num_rows());
+    ASSERT_EQ(2, batch.num_rows());
     ASSERT_FALSE(eof);
     batch.reset();
     scan_node.close(&_runtime_state);
@@ -591,13 +595,6 @@ TEST_F(AvroScannerTest, read_avro_file) {
         scan_node.runtime_profile()->pretty_print(&ss);
         LOG(INFO) << ss.str();
     }
-    //AvroReader::AvroReader(RuntimeState* state, ScannerCounter* counter, RuntimeProfile* profile,
-    //                   FileReader* file_reader, LineReader* line_reader) 
-    //BrokerScanner scanner(&_runtime_state, _profile, _params, ranges, _addresses, _pre_filter, &_counter);
-    //AvroReader reader(&_runtime_state, &_counter, scan_node.runtime_profile(), nullptr, nullptr);
-    //std::cout << reader.get_filename() << std::endl;
-    //WHZ_TEST << "whz_test" << std::endl;
-    //reader.init("[\"$.mid\", \"$.src.k1\", \"$.src.k2\", \"$.src.k3\"]", "");
 }
 }
 

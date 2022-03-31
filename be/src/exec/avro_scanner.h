@@ -84,7 +84,7 @@ public:
 
 private:
     Status open_file_reader();
-    //Status open_line_reader();
+    Status open_line_reader();
     Status open_avro_reader();
     Status open_next_reader();
 
@@ -99,12 +99,12 @@ private:
     
     // std::unique_ptr<avro::DataFileReaderBase> _cur_file_reader;
     FileReader* _cur_file_reader;
-    //LineReader* _cur_line_reader;
+    LineReader* _cur_line_reader;
     AvroReader* _cur_avro_reader;
     int _next_range;
     bool _cur_reader_eof;
     bool _scanner_eof;
-    // bool _read_avro_by_line;
+    bool _read_avro_by_line;
 
     bool _skip_next_line;
 
@@ -118,7 +118,7 @@ public:
     // AvroReader(RuntimeState* state, ScannerCounter* counter, RuntimeProfile* profile,
     //                    FileReader* file_reader, LineReader* line_reader);
     AvroReader(RuntimeState* state, ScannerCounter* counter, RuntimeProfile* profile,
-                          FileReader* file_reader);
+                          FileReader* file_reader, LineReader* line_reader);
     ~AvroReader();
 
     const char* get_filename() { return _filename; }
@@ -126,10 +126,10 @@ public:
     Status init(const std::string& avropath, const std::string& avro_root);
 
     Status read_avro_row(Tuple* tuple, const std::vector<SlotDescriptor*>& slot_descs, MemPool* tuple_pool,
-                int32_t readed_rows, bool* eof);
+                         bool* is_empty_row, bool* eof);
 private:
     Status _handle_nested_complex_avro(Tuple* tuple, const std::vector<SlotDescriptor*>& slot_descs,
-                                       MemPool* tuple_pool, int32_t readed_rows, bool* eof);
+                                       MemPool* tuple_pool, bool* is_empty_row, bool* eof);
 
     void _fill_slot(Tuple* tuple, SlotDescriptor* slot_desc, MemPool* mem_pool,
                     const uint8_t* value, int32_t len);
@@ -152,7 +152,7 @@ private:
     Status _get_avro_paths(const std::string& avropath,
                            std::vector<std::vector<JsonPath>>* vect);
 
-    Status _parse_avro_doc(int32_t readed_row, size_t* size, bool* eof, MemPool* tuple_pool,
+    Status _parse_avro_doc(size_t* size, bool* eof, MemPool* tuple_pool,
                            Tuple* tuple, const std::vector<SlotDescriptor*>& slot_descs);
 
     std::string _print_avro_value(avro::NodePtr root_node);
@@ -165,7 +165,7 @@ private:
     ScannerCounter* _counter;
     RuntimeProfile* _profile;
     FileReader* _file_reader;
-    //LineReader* _line_reader;
+    LineReader* _line_reader;
     bool _closed;
     RuntimeProfile::Counter* _bytes_read_counter;
     RuntimeProfile::Counter* _read_timer;
