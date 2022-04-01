@@ -263,8 +263,25 @@ Status StreamLoadAction::_on_header(HttpRequest* http_req, StreamLoadContext* ct
     if (!http_req->header(HTTP_COMPRESS_TYPE).empty() && boost::iequals(http_req->header(HTTP_FORMAT_KEY), "JSON")) {
         return Status::InternalError("compress data of JSON format is not supported.");
     }
+    bool read_avro_by_line = false;
+    if (!http_req->header(HTTP_READ_AVRO_BY_LINE).empty()) {
+        if (boost::iequals(http_req->header(HTTP_READ_AVRO_BY_LINE), "true")) {
+            read_avro_by_line = true;
+        }
+    }
     ctx->format =
             parse_format(http_req->header(HTTP_FORMAT_KEY), http_req->header(HTTP_COMPRESS_TYPE));
+    if (ctx->format == TFileFormatType::FORMAT_AVRO) {
+        if (!read_avro_by_line) {
+            std::stringstream ss;
+            ss << "Avro only support read by line and need. So set \"read_avro_by_line\" = \"true\"";
+            return Status::InternalError(ss.str());
+        } else if (http_req->header(HTTP_JSONPATHS).empty()) {
+            std::stringstream ss;
+            ss << "Avro need 2-level jsonpaths to specify the fields to get values. Set \"jsonpaths\" = [\"$.k1\", \"$.k2\"]";
+            return Status::InternalError(ss.str());
+        }
+    }
     if (ctx->format == TFileFormatType::FORMAT_UNKNOWN) {
         std::stringstream ss;
         ss << "unknown data format, format=" << http_req->header(HTTP_FORMAT_KEY);
@@ -276,11 +293,13 @@ Status StreamLoadAction::_on_header(HttpRequest* http_req, StreamLoadContext* ct
     size_t csv_max_body_bytes = config::streaming_load_max_mb * 1024 * 1024;
     size_t json_max_body_bytes = config::streaming_load_json_max_mb * 1024 * 1024;
     bool read_json_by_line = false;
+
     if (!http_req->header(HTTP_READ_JSON_BY_LINE).empty()) {
         if (boost::iequals(http_req->header(HTTP_READ_JSON_BY_LINE), "true")) {
             read_json_by_line = true;
         }
     }
+
     if (!http_req->header(HttpHeaders::CONTENT_LENGTH).empty()) {
         ctx->body_bytes = std::stol(http_req->header(HttpHeaders::CONTENT_LENGTH));
         // json max body size
@@ -486,7 +505,15 @@ Status StreamLoadAction::_process_put(HttpRequest* http_req, StreamLoadContext* 
     } else {
         request.__set_read_json_by_line(false);
     }
-
+    if (!http_req->header(HTTP_READ_AVRO_BY_LINE).empty()) {
+        if (boost::iequals(http_req->header(HTTP_READ_AVRO_BY_LINE), "true")) {
+            request.__set_read_avro_by_line(true);
+        } else {
+            request.__set_read_avro_by_line(false);
+        }
+    } else {
+        request.__set_read_avro_by_line(false);
+    }
     if (!http_req->header(HTTP_FUNCTION_COLUMN + "." + HTTP_SEQUENCE_COL).empty()) {
         request.__set_sequence_col(
                 http_req->header(HTTP_FUNCTION_COLUMN + "." + HTTP_SEQUENCE_COL));

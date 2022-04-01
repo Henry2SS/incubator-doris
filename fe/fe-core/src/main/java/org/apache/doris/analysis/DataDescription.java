@@ -119,6 +119,7 @@ public class DataDescription {
     private String jsonRoot = "";
     private boolean fuzzyParse = false;
     private boolean readJsonByLine = false;
+    private boolean readAvroByLine = false;
     private boolean numAsString = false;
 
     private String sequenceCol;

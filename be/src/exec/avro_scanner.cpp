@@ -147,12 +147,12 @@ Status AvroScanner::open_file_reader() {
 
     const TBrokerRangeDesc& range = _ranges[_next_range];
     int64_t start_offset = range.start_offset;
-    if (range.__isset.read_json_by_line) {
-        _read_avro_by_line = range.read_json_by_line;
+    if (range.__isset.read_avro_by_line) {
+        _read_avro_by_line = range.read_avro_by_line;
     }
-    // current only support line reader
+    // current only support line reader, double check here.
     if (!_read_avro_by_line) {
-        return Status::InvalidArgument("Only support read avro by line. Set `read_json_by_line` = \"true\".");
+        return Status::InvalidArgument("Only support read avro by line. Set `read_avro_by_line` = \"true\".");
     }
 
     switch (range.file_type) {
@@ -237,8 +237,8 @@ Status AvroScanner::open_avro_reader() {
     std::string avropath = "";
     std::string avro_root = "";
 
-    if (range.__isset.avropaths) {
-        avropath = range.avropaths;
+    if (range.__isset.jsonpaths) {
+        avropath = range.jsonpaths;
     }
     if (range.__isset.json_root) {
         //avro_root = range.json_root;
@@ -310,6 +310,8 @@ Status AvroReader::init(const std::string& avropath, const std::string& avro_roo
             }
             std::cout << " " << std::endl;
         }
+    } else {
+        return Status::InvalidArgument("Please set json_path to specify the field.");
     }
     if (!avro_root.empty()) {
         JsonFunctions::parse_json_paths(avro_root, &_parsed_avro_root);
@@ -324,14 +326,20 @@ Status AvroReader::init(const std::string& avropath, const std::string& avro_roo
     RETURN_IF_ERROR(path_valid);
     // get avro schema
     // test
-    // bool exist = FileUtils::check_exist(config::avro_schema_file_path);
-    bool exist = FileUtils::check_exist("/tmp/jdolap/output/be/conf/avro_schema.json");
+    bool exist = FileUtils::check_exist(config::avro_schema_file_path);
+    //bool exist = FileUtils::check_exist("/tmp/jdolap/output/be/conf/avro_schema.json");
     if (!exist) {
         return Status::InternalError("there is no avro schema file at " + config::avro_schema_file_path + ". Please put an schema file in json format.");
     } else {
-        std::string s = "/tmp/jdolap/output/be/conf/avro_schema.json";
-        _schema = avro::compileJsonSchemaFromFile(s.c_str());
-        _datum = avro::GenericDatum(_schema);
+        //std::string s = "/tmp/jdolap/output/be/conf/avro_schema.json";
+        try {
+            _schema = avro::compileJsonSchemaFromFile(config::avro_schema_file_path.c_str());
+            _datum = avro::GenericDatum(_schema);
+        } catch (avro::Exception &e) {
+            return Status::InternalError(std::string("schema get from json failed.") + e.what());
+        }
+        
+        
     }
     
     // TODO: check if path is in shcema
@@ -444,32 +452,23 @@ Status AvroReader::_parse_avro_doc(size_t* size, bool* eof, MemPool* tuple_pool,
     _file_reader_ptr = std::make_unique<avro::DataFileReader<avro::GenericDatum>>(avro::memoryInputStream(avro_str, *size));
 
     // just allow one row in one object
-    if (_file_reader_ptr.get()->read(_datum)) {
-        // TODO : skip row here ?
+    try {
+        if (_file_reader_ptr.get()->read(_datum)) {
+            // TODO : skip row here ?
 
-        if (_datum.type() != avro::AVRO_RECORD) {
-            return Status::DataQualityError("Root schema must be a record");
+            if (_datum.type() != avro::AVRO_RECORD) {
+                return Status::DataQualityError("Root schema must be a record");
+            }
+
+            if (!_write_values_by_avropath(_datum, tuple_pool, tuple, slot_descs)) {
+                _counter->num_rows_filtered++;
+                return Status::DataQualityError("Data quality is not good.");
+            }
         }
-        // if (_datum.value<avro::GenericRecord>().fieldCount() < _parsed_avropaths.size()) {
-        //     return Status::DataQualityError("avro path size is larger than schema size");
-        // }
-        // for (int i = 0; i < _parsed_avropaths.size(); i++) {
-        //     WHZ_LOG << "check each type " << i << " " << _datum.value<avro::GenericRecord>().field(_parsed_avropaths[i][1].to_string()).type() << std::endl;
-        //     if (_datum.value<avro::GenericRecord>().field(_parsed_avropaths[i][1].to_string()).type() != avro::AVRO_STRING 
-        //         && _datum.value<avro::GenericRecord>().field(_parsed_avropaths[i][1].to_string()).type() != avro::AVRO_LONG) { 
-        //         return Status::DataQualityError("only AVRO_STRING and AVRO_LONG supported.");
-        //     } else {
-        //         WHZ_LOG << "here" << std::endl; 
-        //         WHZ_LOG << "fieldcount" << _datum.value<avro::GenericRecord>().fieldCount() << std::endl;
-        //     }
-        // } 
-        if (!_write_values_by_avropath(_datum, tuple_pool, tuple, slot_descs)) {
-            _counter->num_rows_filtered++;
-            return Status::DataQualityError("Data quality is not good.");
-        }
+    } catch (avro::Exception &e) {
+        WHZ_LOG << "data quality is not good." << std::endl;
+        return Status::DataQualityError(std::string("data quality is not good.") + e.what());
     }
-    //*eof = true;
-    //WHZ_LOG << "file not base" << _reader << std::endl;
     return Status::OK();
 }
 
@@ -509,7 +508,7 @@ bool AvroReader::_write_values_by_avropath(avro::GenericDatum datum, MemPool* tu
     
     // avro_path should be different each one 
     for (int i = 0; i < _parsed_avropaths.size(); i++) {
-        // should modify
+        
         std::string path_name = _parsed_avropaths[i][1].to_string();
         auto type = datum.value<avro::GenericRecord>().field(path_name).type();
         avro::GenericDatum record_datum = datum.value<avro::GenericRecord>().field(path_name);

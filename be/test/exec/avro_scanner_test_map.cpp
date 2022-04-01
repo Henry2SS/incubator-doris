@@ -550,26 +550,15 @@ TEST_F(AvroScannerTestMap, read_avro_file_map) {
         range.size = -1;
         range.format_type = TFileFormatType::FORMAT_AVRO;
         range.splittable = true;
-        range.__isset.avropaths = true;
-        range.__isset.read_json_by_line = true;
-        range.read_json_by_line = true;
+        range.__isset.jsonpaths = true;
+        range.__isset.read_avro_by_line = true;
+        range.read_avro_by_line = true;
         range.path = "/tmp/jdolap/be/test/exec/test_data/avro_scanner/test2.avsc";
-        //range.avropaths = "[\"$.mid\", \"$.src.k1\", \"$.src.k2\", \"$.src.k3\"]";
-        //range.avropaths = "[\"$.src.k1\", \"$.src.k2\", \"$.src.k3\", \"$.cur.k4\", \"$.cur.k5\", \"$.cur.k6\"]";
-        range.avropaths = "[\"$.src\", \"$.mid\", \"$.db\", \"$.sch\"]";
+        //range.jsonpaths = "[\"$.mid\", \"$.src.k1\", \"$.src.k2\", \"$.src.k3\"]";
+        //range.jsonpaths = "[\"$.src.k1\", \"$.src.k2\", \"$.src.k3\", \"$.cur.k4\", \"$.cur.k5\", \"$.cur.k6\"]";
+        range.jsonpaths = "[\"$.src\", \"$.mid\", \"$.db\", \"$.sch\"]";
         range.file_type = TFileType::FILE_LOCAL;
         broker_scan_range.ranges.push_back(range);
-
-        // TBrokerRangeDesc range1;
-        // range1.start_offset = 0;
-        // range1.size = -1;
-        // range1.format_type = TFileFormatType::FORMAT_AVRO;
-        // range1.splittable = true;
-        // range1.__isset.avropaths = true;
-        // range1.path = "/tmp/jdolap/be/test/exec/test_data/avro_scanner/test2.avsc";
-        // range1.avropaths = "[\"$.src\", \"$.mid\", \"$.db\", \"$.sch\"]";
-        // range1.file_type = TFileType::FILE_LOCAL;
-        // broker_scan_range.ranges.push_back(range1);
 
         scan_range_params.scan_range.__set_broker_scan_range(broker_scan_range);
         scan_ranges.push_back(scan_range_params);

@@ -594,7 +594,7 @@ struct TStreamLoadPutRequest {
     33: optional bool read_json_by_line
     34: optional string auth_code_uuid
     35: optional i32 send_batch_parallelism
-    36: optional string avropaths 
+    36: optional bool read_avro_by_line 
 }
 
 struct TStreamLoadPutResult {

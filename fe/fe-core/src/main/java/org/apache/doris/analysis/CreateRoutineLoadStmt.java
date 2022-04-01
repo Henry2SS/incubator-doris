@@ -459,6 +459,8 @@ public class CreateRoutineLoadStmt extends DdlStmt {
                 fuzzyParse = Boolean.valueOf(jobProperties.getOrDefault(FUZZY_PARSE, "false"));
             } else if (format.equalsIgnoreCase("avro")) {
                 format = "avro";
+                jsonPaths = jobProperties.get(JSONPATHS);
+                jsonRoot = jobProperties.get(JSONROOT);
             } else {
                 throw new UserException("Format type is invalid. format=`" + format + "`");
             }
