@@ -15,22 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 
-suite("connect_action", "demo") {
-    logger.info("ok")
-    def result1 = connect(user = 'admin', password = context.config.jdbcPassword, url = context.config.jdbcUrl) {
-        // execute sql with admin user
-        sql 'select 99 + 1'
-    }
+#pragma once
 
-    // if not specify <user, password, url>, it will be set to context.config.jdbc<User, Password, Url>
-    //
-    // user: 'root'
-    // password: context.config.jdbcPassword
-    // url: context.config.jdbcUrl
-    def result2 = connect('root') {
-        // execute sql with root user
-        sql 'select 50 + 50'
-    }
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
-    assertEquals(result1, result2)
-}
+#include "vec/exprs/vexpr.h"
+
+namespace doris {
+namespace vectorized {
+
+class MockVExpr : public VExpr {
+public:
+    MOCK_CONST_METHOD1(clone, VExpr*(ObjectPool* pool));
+    MOCK_CONST_METHOD0(expr_name, const std::string&());
+    MOCK_METHOD3(execute, Status(VExprContext* context, vectorized::Block* block, int* result_column_id));
+}; // class MockVExpr
+
+} // namespace vectorized
+} // namespace doris
