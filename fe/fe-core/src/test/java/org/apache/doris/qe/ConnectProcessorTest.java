@@ -498,6 +498,9 @@ public class ConnectProcessorTest {
             ctx.getState().reset();
             parsedStmt = stmts.get(i);
 
+            String digest = ((QueryStmt) parsedStmt).toDigest();
+            System.out.println("whz-test: " + digest);
+
             String sqlDigest = DigestUtils.md5Hex(((QueryStmt) parsedStmt).toDigest());
             System.out.println(sqlDigest);
         }
