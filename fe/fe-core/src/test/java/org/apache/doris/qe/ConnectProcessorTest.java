@@ -238,7 +238,7 @@ public class ConnectProcessorTest {
         return context;
     }
 
-    @Test
+    /*@Test
     public void testQuit() throws IOException {
         ConnectContext ctx = initMockContext(mockChannel(quitPacket), AccessTestUtil.fetchAdminCatalog());
 
@@ -474,4 +474,29 @@ public class ConnectProcessorTest {
         processor.loop();
         Assert.assertTrue(myContext.isKilled());
     }
+    */
+
+    @Test
+    public void testDigestValidity() throws Exception {
+        File file = new File("/home/wuhangze/git/jdolap-engine/originSql.sql");
+        String content = new String(Files.readAllBytes(Paths.get("a.txt")));
+
+        String originStmt = content;
+        ConnectContext ctx = initMockContext(mockChannel(queryPacket), AccessTestUtil.fetchAdminCatalog());
+        ConnectProcessor processor = new ConnectProcessor(ctx);
+
+        List<StatementBase> stmts = processor.analyze(originStmt);
+        for (int i = 0; i < stmts.size(); ++i) {
+            ctx.getState().reset();
+            if (i > 0) {
+                ctx.resetReturnRows();
+            }
+            parsedStmt = stmts.get(i);
+
+            String sqlDigest = DigestUtils.md5Hex(((QueryStmt) parsedStmt).toDigest());
+            System.out.println(sqlDigest + " " + parsedStmt.toSql());
+
+        }
+    }
+
 }
