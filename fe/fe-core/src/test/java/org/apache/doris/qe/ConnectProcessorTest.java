@@ -59,6 +59,7 @@ public class ConnectProcessorTest {
     private static ByteBuffer fieldListPacket;
     private static AuditEventBuilder auditBuilder = new AuditEventBuilder();
     private static ConnectContext myContext;
+    privete String content = new String(Files.readAllBytes(Paths.get("/home/wuhangze/git/jdolap-engine/originSql.sql")));
 
     @Mocked
     private static SocketChannel socketChannel;
@@ -93,7 +94,7 @@ public class ConnectProcessorTest {
         {
             MysqlSerializer serializer = MysqlSerializer.newInstance();
             serializer.writeInt1(3);
-            serializer.writeEofString("select * from a");
+            serializer.writeEofString(content);
             queryPacket = serializer.toByteBuffer();
         }
 
@@ -486,7 +487,7 @@ public class ConnectProcessorTest {
 
     @Test
     public void testDigestValidity() throws Exception {
-        String content = new String(Files.readAllBytes(Paths.get("/home/wuhangze/git/jdolap-engine/originSql.sql")));
+
 
         String originStmt = content;
         ConnectContext ctx = initMockContext(mockChannel(queryPacket), AccessTestUtil.fetchAdminCatalog());
