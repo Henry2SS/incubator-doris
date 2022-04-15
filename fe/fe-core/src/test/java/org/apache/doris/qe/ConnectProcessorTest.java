@@ -43,6 +43,14 @@ import java.nio.channels.SocketChannel;
 import mockit.Expectations;
 import mockit.Mocked;
 
+
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+import org.apache.doris.analysis.StatementBase;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.doris.analysis.QueryStmt;
+
 public class ConnectProcessorTest {
     private static ByteBuffer initDbPacket;
     private static ByteBuffer pingPacket;
@@ -478,13 +486,12 @@ public class ConnectProcessorTest {
 
     @Test
     public void testDigestValidity() throws Exception {
-        File file = new File("/home/wuhangze/git/jdolap-engine/originSql.sql");
-        String content = new String(Files.readAllBytes(Paths.get("a.txt")));
+        String content = new String(Files.readAllBytes(Paths.get("/home/wuhangze/git/jdolap-engine/originSql.sql")));
 
         String originStmt = content;
         ConnectContext ctx = initMockContext(mockChannel(queryPacket), AccessTestUtil.fetchAdminCatalog());
         ConnectProcessor processor = new ConnectProcessor(ctx);
-
+        StatementBase parsedStmt = null;
         List<StatementBase> stmts = processor.analyze(originStmt);
         for (int i = 0; i < stmts.size(); ++i) {
             ctx.getState().reset();
