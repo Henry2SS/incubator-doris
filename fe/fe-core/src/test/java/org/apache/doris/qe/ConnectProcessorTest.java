@@ -488,9 +488,8 @@ public class ConnectProcessorTest {
     @Test
     public void testDigestValidity() throws Exception {
         String content = new String(Files.readAllBytes(Paths.get("/home/wuhangze/git/jdolap-engine/originSql.sql")));
-        System.out.println(content);
         String originStmt = content;
-        
+
         ConnectContext ctx = UtFrameUtils.createDefaultCtx();
         ConnectProcessor processor = new ConnectProcessor(ctx);
         StatementBase parsedStmt = null;
@@ -500,8 +499,7 @@ public class ConnectProcessorTest {
             parsedStmt = stmts.get(i);
 
             String sqlDigest = DigestUtils.md5Hex(((QueryStmt) parsedStmt).toDigest());
-            System.out.println(sqlDigest + " " + parsedStmt.toSql());
-
+            System.out.println(sqlDigest);
         }
     }
 
