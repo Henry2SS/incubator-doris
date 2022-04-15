@@ -94,7 +94,7 @@ public class ConnectProcessorTest {
         {
             MysqlSerializer serializer = MysqlSerializer.newInstance();
             serializer.writeInt1(3);
-            serializer.writeEofString(content);
+            serializer.writeEofString("select * from a");
             queryPacket = serializer.toByteBuffer();
         }
 
