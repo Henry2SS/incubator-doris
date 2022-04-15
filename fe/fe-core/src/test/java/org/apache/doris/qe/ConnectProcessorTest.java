@@ -50,6 +50,7 @@ import java.util.List;
 import org.apache.doris.analysis.StatementBase;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.doris.analysis.QueryStmt;
+import org.apache.doris.utframe.UtFrameUtils;
 
 public class ConnectProcessorTest {
     private static ByteBuffer initDbPacket;
@@ -59,7 +60,6 @@ public class ConnectProcessorTest {
     private static ByteBuffer fieldListPacket;
     private static AuditEventBuilder auditBuilder = new AuditEventBuilder();
     private static ConnectContext myContext;
-    private String content = new String(Files.readAllBytes(Paths.get("/home/wuhangze/git/jdolap-engine/originSql.sql")));
 
     @Mocked
     private static SocketChannel socketChannel;
@@ -487,17 +487,15 @@ public class ConnectProcessorTest {
 
     @Test
     public void testDigestValidity() throws Exception {
+        String content = new String(Files.readAllBytes(Paths.get("/home/wuhangze/git/jdolap-engine/originSql.sql")));
 
         String originStmt = content;
-        ConnectContext ctx = initMockContext(mockChannel(queryPacket), AccessTestUtil.fetchAdminCatalog());
+        ConnectContext ctx = UtFrameUtils.createDefaultCtx();
         ConnectProcessor processor = new ConnectProcessor(ctx);
         StatementBase parsedStmt = null;
         List<StatementBase> stmts = processor.analyze(originStmt);
         for (int i = 0; i < stmts.size(); ++i) {
             ctx.getState().reset();
-            if (i > 0) {
-                ctx.resetReturnRows();
-            }
             parsedStmt = stmts.get(i);
 
             String sqlDigest = DigestUtils.md5Hex(((QueryStmt) parsedStmt).toDigest());
