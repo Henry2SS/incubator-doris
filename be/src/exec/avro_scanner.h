@@ -18,6 +18,7 @@
 #ifndef BE_SRC_AVRO_SCANNER_H_
 #define BE_SRC_AVRO_SCANNER_H_
 #include <string>
+#include <vector>
 
 #include <rapidjson/document.h>
 #include <rapidjson/stringbuffer.h>
@@ -37,6 +38,7 @@
 #include "avro/Specific.hh"
 #include "avro/ValidSchema.hh"
 #include "avro/Writer.hh"
+#include "avro/Exception.hh"
 
 #include "common/status.h"
 #include "exec/base_scanner.h"
@@ -104,7 +106,7 @@ private:
     int _next_range;
     bool _cur_reader_eof;
     bool _scanner_eof;
-    bool _read_avro_by_line;
+    // bool _read_avro_by_line;
 
     bool _skip_next_line;
 
@@ -123,44 +125,52 @@ public:
 
     const char* get_filename() { return _filename; }
 
-    Status init(const std::string& avropath, const std::string& avro_root);
+    Status init();
 
     Status read_avro_row(Tuple* tuple, const std::vector<SlotDescriptor*>& slot_descs, MemPool* tuple_pool,
                          bool* is_empty_row, bool* eof);
 private:
-    Status _handle_nested_complex_avro(Tuple* tuple, const std::vector<SlotDescriptor*>& slot_descs,
-                                       MemPool* tuple_pool, bool* is_empty_row, bool* eof);
+    // Status _handle_nested_complex_avro(Tuple* tuple, const std::vector<SlotDescriptor*>& slot_descs,
+    //                                    MemPool* tuple_pool, bool* is_empty_row, bool* eof);
 
     void _fill_slot(Tuple* tuple, SlotDescriptor* slot_desc, MemPool* mem_pool,
                     const uint8_t* value, int32_t len);
 
-    void _set_tuple_value(avro::GenericDatum datum, Tuple* tuple,
-                          const std::vector<SlotDescriptor*>& slot_descs, MemPool* tuple_pool,
-                          bool* valid);
-    void _write_data_to_tuple(avro::GenericDatum datum, SlotDescriptor* desc,
-                              Tuple* tuple, MemPool* tuple_pool, bool* valid);
+    // void _set_tuple_value(avro::GenericDatum datum, Tuple* tuple,
+    //                       const std::vector<SlotDescriptor*>& slot_descs, MemPool* tuple_pool,
+    //                       bool* valid);
+    // void _write_data_to_tuple(avro::GenericDatum datum, SlotDescriptor* desc,
+    //                           Tuple* tuple, MemPool* tuple_pool, bool* valid);
 
-    bool _write_values_by_avropath(avro::GenericDatum datum, MemPool* tuple_pool,
-                                   Tuple* tuple, const std::vector<SlotDescriptor*>& slot_descs);
+    // bool _write_values_by_avropath(avro::GenericDatum datum, MemPool* tuple_pool,
+    //                                Tuple* tuple, const std::vector<SlotDescriptor*>& slot_descs);
     
-    bool _process_simple_type(avro::Type type, std::string& path_name, avro::GenericDatum datum, int nullcount, MemPool* tuple_pool,
-                                   Tuple* tuple, const std::vector<SlotDescriptor*>& slot_descs);
+    // bool _process_simple_type(avro::Type type, std::string& path_name, avro::GenericDatum datum, int nullcount, MemPool* tuple_pool,
+    //                                Tuple* tuple, const std::vector<SlotDescriptor*>& slot_descs);
 
-    size_t _get_column_index(std::string path_name, const std::vector<SlotDescriptor*>& slot_descs);
+    // size_t _get_column_index(std::string path_name, const std::vector<SlotDescriptor*>& slot_descs);
     void _close();
 
-    Status _get_avro_paths(const std::string& avropath,
-                           std::vector<std::vector<JsonPath>>* vect);
+    //Status _get_avro_paths(const std::string& avropath,
+    //                       std::vector<std::vector<JsonPath>>* vect);
 
-    Status _parse_avro_doc(size_t* size, bool* eof, MemPool* tuple_pool,
+    Status _get_avro_doc(size_t* size, bool* eof, MemPool* tuple_pool,
                            Tuple* tuple, const std::vector<SlotDescriptor*>& slot_descs);
 
-    std::string _print_avro_value(avro::NodePtr root_node);
-    std::string _print_avro_path(const std::vector<JsonPath>& path);
+    // std::string _print_avro_value(avro::NodePtr root_node);
+    // std::string _print_avro_path(const std::vector<JsonPath>& path);
 
-    Status _validate_and_generate_avro_path(std::vector<std::vector<JsonPath>>* vect);
-    Status _validate_path_and_schema(avro::ValidSchema* schema, std::vector<std::vector<JsonPath>>* vect);
+    // Status _validate_and_generate_avro_path(std::vector<std::vector<JsonPath>>* vect);
+    // Status _validate_path_and_schema(avro::ValidSchema* schema, std::vector<std::vector<JsonPath>>* vect);
 
+    Status _get_field_mapping(const std::vector<SlotDescriptor*>& slot_descs);
+    Status deserialize_row(Tuple* tuple, const std::vector<SlotDescriptor*>& slot_descs,
+                                       MemPool* tuple_pool, bool* is_empty_row, bool* eof);
+
+    using DeserializeFn = std::function<void(MemPool* tuple_pool, Tuple* tuple, SlotDescriptor* slot_desc, avro::Decoder & decoder, int nullcount)>;
+    using SkipFn = std::function<void(avro::Decoder & decoder)>;
+    DeserializeFn createDeserializeFn(avro::NodePtr root_node, SlotDescriptor* slot_desc);
+    SkipFn createSkipFn(avro::NodePtr root_node);
 private:
     int _next_line;
     int _total_lines;
@@ -179,13 +189,19 @@ private:
 
     std::unordered_map<std::string, int> _name_map;
 
+
+
+    std::vector<int> _field_mapping;
+    std::vector<SkipFn> _skip_fns;
+    std::vector<DeserializeFn> _deserialize_fns;
+
     const char* _filename;
     avro::ValidSchema _schema;
-    std::unique_ptr<avro::InputStream> _avro_input_stream;
-    //avro::DecoderPtr _decoder;
-    std::unique_ptr<avro::DataFileReader<avro::GenericDatum>> _file_reader_ptr;
+    avro::DecoderPtr _decoder;
+    avro::InputStreamPtr _in;
+    //std::unique_ptr<avro::DataFileReader<avro::GenericDatum>> _file_reader_ptr;
     //avro::DataFileReaderBase _file_reader;
-    avro::GenericDatum _datum;
+    //avro::GenericDatum _datum;
 
     
 };
