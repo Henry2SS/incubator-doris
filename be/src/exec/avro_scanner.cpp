@@ -49,7 +49,6 @@ AvroScanner::AvroScanner(RuntimeState* state, RuntimeProfile* profile,
       _ranges(ranges),
       _broker_addresses(broker_addresses),
       _cur_file_reader(nullptr),
-      _cur_line_reader(nullptr),
       _cur_avro_reader(nullptr),
       _next_range(0),
       _cur_reader_eof(false),
@@ -87,13 +86,13 @@ Status AvroScanner::get_next(Tuple* tuple, MemPool* tuple_pool, bool* eof) {
             }
         }
 
-        if (_skip_next_line) {
-            size_t size = 0;
-            const uint8_t* object_ptr = nullptr;
-            RETURN_IF_ERROR(_cur_line_reader->read_line(&object_ptr, &size, &_cur_reader_eof));
-            _skip_next_line = false;
-            continue;
-        }
+        // if (_skip_next_line) {
+        //     size_t size = 0;
+        //     const uint8_t* object_ptr = nullptr;
+        //     RETURN_IF_ERROR(_cur_line_reader->read_line(&object_ptr, &size, &_cur_reader_eof));
+        //     _skip_next_line = false;
+        //     continue;
+        // }
 
         bool is_empty_row = false;
 
@@ -123,10 +122,10 @@ void AvroScanner::close() {
         delete _cur_avro_reader;
         _cur_avro_reader = nullptr;
     }
-    if (_cur_line_reader != nullptr) {
-        delete _cur_line_reader;
-        _cur_line_reader = nullptr;
-    }
+    // if (_cur_line_reader != nullptr) {
+    //     delete _cur_line_reader;
+    //     _cur_line_reader = nullptr;
+    // }
     if (_cur_file_reader != nullptr) {
         if (_stream_load_pipe != nullptr) {
             _stream_load_pipe.reset();
@@ -205,26 +204,26 @@ Status AvroScanner::open_file_reader() {
 }
 
 
-Status AvroScanner::open_line_reader() {
-    if (_cur_line_reader != nullptr) {
-        delete _cur_line_reader;
-        _cur_line_reader = nullptr;
-    }
+// Status AvroScanner::open_line_reader() {
+//     if (_cur_line_reader != nullptr) {
+//         delete _cur_line_reader;
+//         _cur_line_reader = nullptr;
+//     }
 
-    const TBrokerRangeDesc& range = _ranges[_next_range];
-    int64_t size = range.size;
-    if (range.start_offset != 0) {
-        size += 1;
-        _skip_next_line = true;
-    } else {
-        _skip_next_line = false;
-    }
-    // _cur_line_reader = new PlainBiaLineReader(_profile, _cur_file_reader, nullptr,
-    //                                           size, _line_delimiter, _line_delimiter_length);
-    _cur_line_reader = new PlainBinaryLineReader(_cur_file_reader);
-    _cur_reader_eof = false;
-    return Status::OK();
-}
+//     const TBrokerRangeDesc& range = _ranges[_next_range];
+//     int64_t size = range.size;
+//     if (range.start_offset != 0) {
+//         size += 1;
+//         _skip_next_line = true;
+//     } else {
+//         _skip_next_line = false;
+//     }
+//     // _cur_line_reader = new PlainBiaLineReader(_profile, _cur_file_reader, nullptr,
+//     //                                           size, _line_delimiter, _line_delimiter_length);
+//     _cur_line_reader = new PlainBinaryLineReader(_cur_file_reader);
+//     _cur_reader_eof = false;
+//     return Status::OK();
+// }
 
 
 Status AvroScanner::open_avro_reader() {
@@ -233,12 +232,12 @@ Status AvroScanner::open_avro_reader() {
         _cur_avro_reader = nullptr;
     }
 
-    const TBrokerRangeDesc& range = _ranges[_next_range];
-    if (range.start_offset != 0) {
-        _skip_next_line = true;
-    } else {
-        _skip_next_line = false;
-    }
+    // const TBrokerRangeDesc& range = _ranges[_next_range];
+    // if (range.start_offset != 0) {
+    //     _skip_next_line = true;
+    // } else {
+    //     _skip_next_line = false;
+    // }
 
     // std::string avropath = "";
     // std::string avro_root = "";
@@ -259,7 +258,7 @@ Status AvroScanner::open_avro_reader() {
     //} else {
         // current case never reached
     WHZ_LOG << "go _cur_file_reader" << std::endl;
-    _cur_avro_reader = new AvroReader(_state, _counter, _profile, nullptr, _cur_line_reader);
+    _cur_avro_reader = new AvroReader(_state, _counter, _profile, _cur_file_reader, nullptr);
     //}
     WHZ_LOG << "new AvroReader" << std::endl;
     // RETURN_IF_ERROR(_cur_avro_reader->init(avropath, avro_root));
@@ -274,7 +273,7 @@ Status AvroScanner::open_next_reader() {
     }
 
     RETURN_IF_ERROR(open_file_reader());
-    RETURN_IF_ERROR(open_line_reader());
+    //RETURN_IF_ERROR(open_line_reader());
     RETURN_IF_ERROR(open_avro_reader());
     _next_range++;
 
@@ -443,10 +442,10 @@ Status AvroReader::_get_avro_doc(size_t* size, bool* eof, MemPool* tuple_pool,
     const uint8_t* avro_str = nullptr;
     std::unique_ptr<uint8_t[]> avro_str_ptr;
 
-    if (_line_reader != nullptr) {
-        WHZ_LOG << "_line_reader is not null " << std::endl;
-        RETURN_IF_ERROR(_line_reader->read_line(&avro_str, size, eof));
-    } else {
+    // if (_line_reader != nullptr) {
+    //     WHZ_LOG << "_line_reader is not null " << std::endl;
+    //     RETURN_IF_ERROR(_line_reader->read_line(&avro_str, size, eof));
+    // } else {
         WHZ_LOG << "_file_reader == nullptr " << (_file_reader == nullptr) << std::endl;
         int64_t length = 0;
         RETURN_IF_ERROR(_file_reader->read_one_message(&avro_str_ptr, &length));
@@ -455,7 +454,7 @@ Status AvroReader::_get_avro_doc(size_t* size, bool* eof, MemPool* tuple_pool,
         if (length == 0) {
             *eof = true;
         }
-    }
+    // }
     
     _bytes_read_counter += *size;
     if (*eof) {
@@ -473,7 +472,6 @@ Status AvroReader::_get_avro_doc(size_t* size, bool* eof, MemPool* tuple_pool,
         //WHZ_LOG << "file_reader.hasMore()" << file_reader.hasMore() << std::endl;
         _in = avro::memoryInputStream(avro_str, *size);
         _decoder->init(*_in);
-
     } catch  (avro::Exception &e) {
         return Status::DataQualityError(std::string("data quality is not good.") + e.what());
     }
@@ -503,19 +501,19 @@ Status AvroReader::_get_avro_doc(size_t* size, bool* eof, MemPool* tuple_pool,
 
 void AvroReader::_fill_slot(Tuple* tuple, SlotDescriptor* slot_desc, MemPool* mem_pool,
                             const uint8_t* value, int32_t len) {
-    WHZ_LOG << "into fill slot" << std::endl;
+    //WHZ_LOG << "into fill slot" << std::endl;
     tuple->set_not_null(slot_desc->null_indicator_offset());
     void* slot = tuple->get_slot(slot_desc->tuple_offset());
     StringValue* str_slot = reinterpret_cast<StringValue*>(slot);
     // WHZ_LOG << str_slot->to_string() << std::endl;
-    WHZ_LOG << "value = " << value << std::endl;
+    //WHZ_LOG << "value = " << value << std::endl;
     str_slot->ptr = reinterpret_cast<char*>(mem_pool->allocate(len));
-    WHZ_LOG << "is ok allocate " << std::endl;
+    //WHZ_LOG << "is ok allocate " << std::endl;
 
     memcpy(str_slot->ptr, value, len);
     // WHZ_LOG << "str_slot->ptr " << str_slot->to_string() << std::endl;
     str_slot->len = len;
-    // WHZ_LOG << "str_slot->len " << str_slot->len << std::endl;
+    WHZ_LOG << "col_name = " << slot_desc->col_name() << " ;  str_slot->len " << str_slot->len << std::endl;
 }
 
 // size_t AvroReader::_get_column_index(std::string path_name, const std::vector<SlotDescriptor*>& slot_descs) {
@@ -711,16 +709,20 @@ AvroReader::DeserializeFn AvroReader::createDeserializeFn(avro::NodePtr root_nod
         case avro::AVRO_BYTES: [[fallthrough]];
         case avro::AVRO_STRING:
             {
+                WHZ_LOG << "into type AVRO_STRING" << std::endl;
                 return [val_string = std::string(), this](MemPool* tuple_pool, Tuple* tuple, SlotDescriptor* slot_desc, avro::Decoder & decoder, int nullcount) mutable {
                     decoder.decodeString(val_string);
+                    WHZ_LOG << "val_string = " <<  val_string << " ; strlen = " << strlen(val_string.c_str()) << std::endl;
                     if (val_string.empty()) {
                         if (slot_desc->is_nullable()) {
+                            WHZ_LOG << "NULL data in string and " << slot_desc->col_name() << " is nullable " << std::endl;
                             tuple->set_null(slot_desc->null_indicator_offset());
                             nullcount++;
                         } else {
-                            throw avro::Exception("NULL data for non-nullable column" + slot_desc->col_name());
+                            WHZ_LOG << "NULL data for non-nullable column: " << slot_desc->col_name() << std::endl;
                         }
                     } else {
+                        WHZ_TEST << "len = "  << strlen(val_string.c_str()) << std::endl;
                         _fill_slot(tuple, slot_desc, tuple_pool, (uint8_t*)val_string.c_str(), strlen(val_string.c_str()));
                     }
                 };
@@ -739,6 +741,7 @@ AvroReader::DeserializeFn AvroReader::createDeserializeFn(avro::NodePtr root_nod
             {
                 return [tmp_buf, wbytes, this](MemPool* tuple_pool, Tuple* tuple, SlotDescriptor* slot_desc, avro::Decoder & decoder, int nullcount) mutable {
                     int64_t val_long = decoder.decodeLong();
+                    WHZ_LOG << "val_long = " << val_long << " and col_name =  " << slot_desc->col_name() << std::endl;
                     wbytes = sprintf((char*)tmp_buf, "%ld", val_long);
                     _fill_slot(tuple, slot_desc, tuple_pool, tmp_buf, wbytes);
                 };
@@ -771,12 +774,6 @@ AvroReader::DeserializeFn AvroReader::createDeserializeFn(avro::NodePtr root_nod
                 };
             }
             break;
-        case avro::AVRO_ARRAY:
-            {
-                // should have array type info
-                // TODO :  
-            }
-            break;
         case avro::AVRO_UNION:
             {
                 auto nullable_deserializer = [root_node, slot_desc, this](size_t non_null_union_index) {
@@ -799,16 +796,18 @@ AvroReader::DeserializeFn AvroReader::createDeserializeFn(avro::NodePtr root_nod
             }
             break;
         case avro::AVRO_NULL:
-        {
-            if (slot_desc->is_nullable())
             {
-                return [this](MemPool* tuple_pool, Tuple* tuple, SlotDescriptor* slot_desc, avro::Decoder & decoder, int nullcount) mutable {
-                    tuple->set_null(slot_desc->null_indicator_offset());
-                    nullcount++;
-                };
-            }
-        } 
+                if (slot_desc->is_nullable())
+                {
+                    WHZ_LOG << "into type AVRO_NULL" << std::endl;
+                    return [](MemPool* tuple_pool, Tuple* tuple, SlotDescriptor* slot_desc, avro::Decoder & decoder, int nullcount) mutable {
+                        tuple->set_null(slot_desc->null_indicator_offset());
+                        nullcount++;
+                    };
+                }
+            } 
             break;
+        case avro::AVRO_ARRAY: [[fallthrough]];
         case avro::AVRO_ENUM: [[fallthrough]];
         case avro::AVRO_FIXED: [[fallthrough]];
         case avro::AVRO_MAP: [[fallthrough]];
@@ -981,6 +980,7 @@ Status AvroReader::deserialize_row(Tuple* tuple, const std::vector<SlotDescripto
     {
         if (_field_mapping[i] >= 0)
         {
+            WHZ_LOG << "decode NO." << i << " column, named " << slot_descs[i]->col_name() << std::endl;
             _deserialize_fns[i](tuple_pool, tuple, slot_descs[_field_mapping[i]], *_decoder, nullcount);
         }
         else
@@ -990,9 +990,12 @@ Status AvroReader::deserialize_row(Tuple* tuple, const std::vector<SlotDescripto
     }
     
     if (nullcount == slot_descs.size()) {
+        *is_empty_row = true;
         _counter->num_rows_filtered++;
-        // valid = false;
+        return Status::OK();
     }
+    *is_empty_row = false;
+    _decoder->drain();
     return Status::OK();
 }
 Status AvroReader::read_avro_row(Tuple* tuple, const std::vector<SlotDescriptor*>& slot_descs, MemPool* tuple_pool,

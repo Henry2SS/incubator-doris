@@ -215,6 +215,9 @@ bool BaseScanner::fill_dest_tuple(Tuple* dest_tuple, MemPool* mem_pool) {
             dest_tuple->set_not_null(slot_desc->null_indicator_offset());
         }
         void* slot = dest_tuple->get_slot(slot_desc->tuple_offset());
+        std::cout << "be4 write, value value = " << reinterpret_cast<const StringValue*>(value)->to_string() << std::endl;
+        std::cout << "be4 write, value len = " << reinterpret_cast<const StringValue*>(value)->len << std::endl;
+        
         RawValue::write(value, slot, slot_desc->type(), mem_pool);
         continue;
     }

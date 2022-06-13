@@ -86,7 +86,7 @@ public:
 
 private:
     Status open_file_reader();
-    Status open_line_reader();
+    // Status open_line_reader();
     Status open_avro_reader();
     Status open_next_reader();
 
@@ -101,14 +101,14 @@ private:
     
     // std::unique_ptr<avro::DataFileReaderBase> _cur_file_reader;
     FileReader* _cur_file_reader;
-    LineReader* _cur_line_reader;
+    // LineReader* _cur_line_reader;
     AvroReader* _cur_avro_reader;
     int _next_range;
     bool _cur_reader_eof;
     bool _scanner_eof;
     // bool _read_avro_by_line;
 
-    bool _skip_next_line;
+    // bool _skip_next_line;
 
     std::shared_ptr<StreamLoadPipe> _stream_load_pipe;
 };
