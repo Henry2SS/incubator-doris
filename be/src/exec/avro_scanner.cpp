@@ -444,12 +444,12 @@ Status AvroReader::_get_avro_doc(size_t* size, bool* eof, MemPool* tuple_pool,
 
     // if (_line_reader != nullptr) {
     //     WHZ_LOG << "_line_reader is not null " << std::endl;
-    //     RETURN_IF_ERROR(_line_reader->read_line(&avro_str, size, eof));
+         RETURN_IF_ERROR(_line_reader->read_line(&avro_str, size, eof));
     // } else {
         WHZ_LOG << "_file_reader == nullptr " << (_file_reader == nullptr) << std::endl;
         int64_t length = 0;
         RETURN_IF_ERROR(_file_reader->read_one_message(&avro_str_ptr, &length));
-        avro_str = avro_str_ptr.get();
+        avro_str = avro_str_ptr.release();
         *size = length;
         if (length == 0) {
             *eof = true;
