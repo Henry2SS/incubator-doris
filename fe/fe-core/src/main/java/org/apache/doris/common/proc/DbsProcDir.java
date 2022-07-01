@@ -20,7 +20,6 @@ package org.apache.doris.common.proc;
 import org.apache.doris.catalog.Catalog;
 import org.apache.doris.catalog.Database;
 import org.apache.doris.common.AnalysisException;
-import org.apache.doris.common.Pair;
 import org.apache.doris.common.util.DebugUtil;
 import org.apache.doris.common.util.ListComparator;
 import org.apache.doris.common.util.TimeUtils;
@@ -39,8 +38,8 @@ import java.util.List;
  */
 public class DbsProcDir implements ProcDirInterface {
     public static final ImmutableList<String> TITLE_NAMES = new ImmutableList.Builder<String>()
-            .add("DbId").add("DbName").add("TableNum").add("Quota")
-            .add("LastConsistencyCheckTime").add("ReplicaQuota")
+            .add("DbId").add("DbName").add("TableNum").add("Size").add("Quota")
+            .add("LastConsistencyCheckTime").add("ReplicaCount").add("ReplicaQuota")
             .build();
 
     private Catalog catalog;
@@ -86,13 +85,13 @@ public class DbsProcDir implements ProcDirInterface {
         }
 
         // get info
-        List<List<Comparable>> dbInfos = new ArrayList<List<Comparable>>();
+        List<List<Comparable>> dbInfos = new ArrayList<>();
         for (String dbName : dbNames) {
             Database db = catalog.getDbNullable(dbName);
             if (db == null) {
                 continue;
             }
-            List<Comparable> dbInfo = new ArrayList<Comparable>();
+            List<Comparable> dbInfo = new ArrayList<>();
             db.readLock();
             try {
                 int tableNum = db.getTables().size();
@@ -100,15 +99,17 @@ public class DbsProcDir implements ProcDirInterface {
                 dbInfo.add(dbName);
                 dbInfo.add(tableNum);
 
-                long dataQuota = db.getDataQuota();
-                Pair<Double, String> quotaUnitPair = DebugUtil.getByteUint(dataQuota);
-                String readableQuota = DebugUtil.DECIMAL_FORMAT_SCALE_3.format(quotaUnitPair.first) + " "
-                        + quotaUnitPair.second;
+                long usedDataQuota = ((Database) db).getUsedDataQuotaWithLock();
+                long dataQuota = ((Database) db).getDataQuota();
+                String readableUsedQuota = DebugUtil.printByteWithUnit(usedDataQuota);
+                String readableQuota = DebugUtil.printByteWithUnit(dataQuota);
+                String lastCheckTime = TimeUtils.longToTimeString(((Database) db).getLastCheckTime());
+                long replicaCount = ((Database) db).getReplicaCountWithLock();
+                long replicaQuota = ((Database) db).getReplicaQuota();
+                dbInfo.add(readableUsedQuota);
                 dbInfo.add(readableQuota);
-
-                dbInfo.add(TimeUtils.longToTimeString(db.getLastCheckTime()));
-
-                long replicaQuota = db.getReplicaQuota();
+                dbInfo.add(lastCheckTime);
+                dbInfo.add(replicaCount);
                 dbInfo.add(replicaQuota);
 
             } finally {
