@@ -418,6 +418,20 @@ if (WITH_LZO)
     set(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} -DDORIS_WITH_LZO")
 endif()
 
+# Enable memory tracker, which allows BE to limit the memory of tasks such as query, load,
+# and compaction,and observe the memory of BE through be_ip:http_port/MemTracker.
+# Adding the option `USE_MEM_TRACKER=OFF sh build.sh` when compiling can turn off the memory tracker,
+# which will bring about a 2% performance improvement, which may be useful in performance POC.
+if (USE_MEM_TRACKER)
+    set(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} -DUSE_MEM_TRACKER")
+endif()
+
+# Compile with jemalloc.
+# Adding the option `USE_JEMALLOC=ON sh build.sh` when compiling can turn on building with jemalloc 
+if (USE_JEMALLOC)
+    set(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} -DUSE_JEMALLOC")
+endif()
+
 if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.0)
     set(CXX_COMMON_FLAGS "${CXX_COMMON_FLAGS} -faligned-new")
 endif()
@@ -434,7 +448,6 @@ set(CXX_FLAGS_DEBUG "${CXX_GCC_FLAGS} -O0")
 #   -O3: Enable all compiler optimizations
 #   -DNDEBUG: Turn off dchecks/asserts/debug only code.
 set(CXX_FLAGS_RELEASE "${CXX_GCC_FLAGS} -O3 -DNDEBUG")
-
 SET(CXX_FLAGS_ASAN "${CXX_GCC_FLAGS} -O0 -fsanitize=address -DADDRESS_SANITIZER")
 SET(CXX_FLAGS_LSAN "${CXX_GCC_FLAGS} -O0 -fsanitize=leak -DLEAK_SANITIZER")
 
@@ -655,9 +668,15 @@ else ()
     set(UBSAN_LIBS -rtlib=compiler-rt tcmalloc)
 endif ()
 
+if (USE_JEMALLOC)
+    set(MALLOCLIB jemalloc)
+else ()
+    set(MALLOCLIB tcmalloc)
+endif()
+
 # Add sanitize static link flags or tcmalloc
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "DEBUG" OR "${CMAKE_BUILD_TYPE}" STREQUAL "RELEASE")
-    set(DORIS_LINK_LIBS ${DORIS_LINK_LIBS} tcmalloc)
+    set(DORIS_LINK_LIBS ${DORIS_LINK_LIBS} ${MALLOCLIB})
 elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "ASAN")
     set(DORIS_LINK_LIBS ${DORIS_LINK_LIBS} ${ASAN_LIBS})
 elseif ("${CMAKE_BUILD_TYPE}" STREQUAL "LSAN")
