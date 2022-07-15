@@ -35,7 +35,7 @@ DORIS_OUTPUT=${DORIS_HOME}/output
 rm -rf ${DORIS_OUTPUT}
 rm -rf ${DORIS_HOME}/output-${build_version}
 
-WITH_MYSQL=1 WITH_LZO=1 sh build.sh
+USE_JEMALLOC=1 WITH_MYSQL=1 WITH_LZO=1 sh build.sh
 BROKER_DIR=${DORIS_HOME}/fs_brokers/apache_hdfs_broker/
 rm -rf ${BROKER_DIR}/output
 sh ${BROKER_DIR}/build.sh
