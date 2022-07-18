@@ -130,7 +130,7 @@ StorageEngine::StorageEngine(const EngineOptions& options)
         _s_instance = this;
     }
     REGISTER_HOOK_METRIC(unused_rowsets_count, [this]() {
-        MutexLock lock(&_gc_mutex);
+        // std::lock_guard<std::mutex> lock(_gc_mutex);
         return _unused_rowsets.size();
     });
     REGISTER_HOOK_METRIC(compaction_mem_consumption, [this]() {
