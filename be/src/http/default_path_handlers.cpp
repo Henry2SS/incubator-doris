@@ -97,8 +97,7 @@ void mem_usage_handler(const std::shared_ptr<MemTracker>& mem_tracker,
     }
 
     (*output) << "<pre>";
-#if defined(ADDRESS_SANITIZER) || defined(LEAK_SANITIZER) || defined(THREAD_SANITIZER) || \
-        defined(USE_JEMALLOC)
+#if defined(ADDRESS_SANITIZER) || defined(LEAK_SANITIZER) || defined(THREAD_SANITIZER)
     (*output) << "Memory tracking is not available with address sanitizer builds.";
 #else
     char buf[2048];
@@ -163,8 +162,7 @@ void mem_tracker_handler(const WebPageHandler::ArgumentMap& args, std::stringstr
 void heap_handler(const WebPageHandler::ArgumentMap& args, std::stringstream* output) {
     (*output) << "<h2>Heap Profile</h2>" << std::endl;
 
-#if defined(ADDRESS_SANITIZER) || defined(LEAK_SANITIZER) || defined(THREAD_SANITIZER) || \
-        defined(USE_JEMALLOC)
+#if defined(ADDRESS_SANITIZER) || defined(LEAK_SANITIZER) || defined(THREAD_SANITIZER)
     (*output) << "<pre>" << std::endl;
     (*output) << "Heap profiling is not available with address sanitizer builds." << std::endl;
     (*output) << "</pre>" << std::endl;
@@ -229,8 +227,7 @@ void heap_handler(const WebPageHandler::ArgumentMap& args, std::stringstream* ou
 void cpu_handler(const WebPageHandler::ArgumentMap& args, std::stringstream* output) {
     (*output) << "<h2>CPU Profile</h2>" << std::endl;
 
-#if defined(ADDRESS_SANITIZER) || defined(LEAK_SANITIZER) || defined(THREAD_SANITIZER) || \
-        defined(USE_JEMALLOC)
+#if defined(ADDRESS_SANITIZER) || defined(LEAK_SANITIZER) || defined(THREAD_SANITIZER)
     (*output) << "<pre>" << std::endl;
     (*output) << "CPU profiling is not available with address sanitizer builds." << std::endl;
     (*output) << "</pre>" << std::endl;
