@@ -26,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.hdfs.HdfsConfiguration;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -329,7 +330,7 @@ public class S3Storage extends BlobStorage {
     public Status list(String remotePath, List<RemoteFile> result, boolean fileNameOnly) {
         try {
             checkS3(caseInsensitiveProperties);
-            Configuration conf = new Configuration();
+            Configuration conf = new HdfsConfiguration();
             String s3AK = caseInsensitiveProperties.get(S3_AK).toString();
             String s3Sk = caseInsensitiveProperties.get(S3_SK).toString();
             String s3Endpoint = caseInsensitiveProperties.get(S3_ENDPOINT).toString();
