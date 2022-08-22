@@ -218,7 +218,7 @@ if [[ -z ${USE_MEM_TRACKER} ]]; then
     USE_MEM_TRACKER=ON
 fi
 if [[ -z ${STRICT_MEMORY_USE} ]]; then
-    STRICT_MEMORY_USE=OFF
+    STRICT_MEMORY_USE=ON
 fi
 
 echo "Get params:
