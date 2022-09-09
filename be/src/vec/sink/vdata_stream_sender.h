@@ -175,9 +175,6 @@ public:
         std::string localhost = BackendOptions::get_localhost();
         _is_local = (_brpc_dest_addr.hostname == localhost) &&
                     (_brpc_dest_addr.port == config::brpc_port);
-        if (_is_local) {
-            LOG(INFO) << "will use local Exchange, dest_node_id is : " << _dest_node_id;
-        }
     }
 
     virtual ~Channel() {
@@ -244,8 +241,10 @@ private:
         brpc::Join(call_id);
         if (cntl->Failed()) {
             std::string err = fmt::format(
-                    "failed to send brpc batch, error={}, error_text={}, client: {}",
-                    berror(cntl->ErrorCode()), cntl->ErrorText(), BackendOptions::get_localhost());
+                    "failed to send brpc batch, error={}, error_text={}, client: {}, "
+                    "latency = {}",
+                    berror(cntl->ErrorCode()), cntl->ErrorText(), BackendOptions::get_localhost(),
+                    cntl->latency_us());
             LOG(WARNING) << err;
             return Status::ThriftRpcError(err);
         }

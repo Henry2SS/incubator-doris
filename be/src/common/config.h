@@ -49,6 +49,8 @@ CONF_String(priority_networks, "");
 CONF_mInt64(tc_use_memory_min, "10737418240");
 // free memory rate.[0-100]
 CONF_mInt64(tc_free_memory_rate, "20");
+// tcmallc aggressive_memory_decommit
+CONF_mBool(tc_enable_aggressive_memory_decommit, "true");
 
 // Bound on the total amount of bytes allocated to thread caches.
 // This bound is not strict, so it is possible for the cache to go over this bound
@@ -749,6 +751,12 @@ CONF_Int32(quick_compaction_max_rows, "1000");
 CONF_Int32(quick_compaction_batch_size, "10");
 // do compaction min rowsets
 CONF_Int32(quick_compaction_min_rowsets, "10");
+// Max waiting time to wait the "plan fragment start" rpc.
+// If timeout, the fragment will be cancelled.
+CONF_mInt32(max_fragment_start_wait_time_seconds, "30");
+
+// limit the queue of pending batches which will be sent by a single nodechannel
+CONF_mInt64(nodechannel_pending_queue_max_bytes, "67108864");
 } // namespace config
 
 } // namespace doris
